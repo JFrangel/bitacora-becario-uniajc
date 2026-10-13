@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es-CO" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090b0c">
+    <meta name="description" content="Bitácora personal para registrar actividades, resultados y evidencias de trabajo.">
+    <title>Mi bitácora de actividades</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="page-heading">
+        <div>
+          <p class="eyebrow">SEGUIMIENTO ACADÉMICO</p>
+          <h1>Mi bitácora de actividades</h1>
+          <p class="institution">Institución Universitaria Antonio José Camacho</p>
+        </div>
+        <div class="header-actions">
+          <label class="sr-only" for="themeSelect">Tema visual</label>
+          <select id="themeSelect" class="theme-select" aria-label="Tema visual">
+            <option value="dark">Oscuro</option>
+            <option value="light">Claro</option>
+          </select>
+        </div>
+      </header>
+
+      <section class="summary" aria-label="Resumen de actividades">
+        <div class="summary-item">
+          <strong id="activityCount">0</strong>
+          <span>Actividades</span>
+        </div>
+        <div class="summary-item">
+          <strong><span id="hoursCount">0</span> h</strong>
+          <span>Horas registradas</span>
+        </div>
+        <div class="summary-item">
+          <strong id="completedCount">0</strong>
+          <span>Completadas</span>
+        </div>
+      </section>
+
+      <section class="entry-section" aria-labelledby="formTitle">
+        <details id="entryDisclosure" class="entry-disclosure">
+          <summary class="entry-toggle">
+            <span class="entry-toggle-copy">
+              <span class="entry-toggle-title">Registrar actividad</span>
+              <span class="entry-toggle-hint">Fecha, tarea, resultado y evidencias</span>
+            </span>
+            <span class="entry-toggle-icon" aria-hidden="true">＋</span>
+          </summary>
+          <div class="entry-panel">
+            <div class="section-heading">
+              <h2 id="formTitle">Nuevo registro</h2>
+              <button id="cancelEdit" class="text-button hidden" type="button">Cancelar edición</button>
+            </div>
+            <form id="entryForm">
+          <div class="form-grid two-columns">
+            <label class="field">
+              <span>Fecha</span>
+              <input id="entryDate" name="date" type="date" required>
+            </label>
+            <label class="field">
+              <span>Horas trabajadas</span>
+              <input id="entryHours" name="hours" type="text" inputmode="decimal" maxlength="5" placeholder="Ej. 0,5" value="2" required>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Proyecto o área</span>
+            <input id="entryProject" name="project" type="text" list="projectOptions" maxlength="100" placeholder="Escribe o elige un proyecto" autocomplete="off" required>
+            <datalist id="projectOptions"></datalist>
+          </label>
+
+          <label class="field">
+            <span>Actividad realizada</span>
+            <textarea id="entryActivity" name="activity" rows="3" maxlength="1500" placeholder="Ej. Revisé los requisitos del proceso y organicé las observaciones." required></textarea>
+          </label>
+
+          <label class="field">
+            <span>Resultado obtenido</span>
+            <textarea id="entryResult" name="result" rows="3" maxlength="1500" placeholder="Ej. Identifiqué los documentos pendientes y dejé las dudas para revisión." required></textarea>
+          </label>
+
+          <fieldset class="status-fieldset">
+            <legend>Estado</legend>
+            <label class="radio-option"><input type="radio" name="status" value="Completada" checked><span>Completada</span></label>
+            <label class="radio-option"><input type="radio" name="status" value="En progreso"><span>En progreso</span></label>
+            <label class="radio-option"><input type="radio" name="status" value="Pendiente de revisión"><span>Pendiente de revisión</span></label>
+          </fieldset>
+
+          <div class="evidence-section">
+            <div class="evidence-heading">
+              <div>
+                <h3>Evidencias</h3>
+                <p>Adjunta imágenes o enlaces relacionados con esta actividad.</p>
+              </div>
+            </div>
+            <div class="evidence-actions">
+              <label class="file-button" for="photoInput">＋ Añadir imágenes</label>
+              <input id="photoInput" class="sr-only" type="file" accept="image/*" multiple>
+              <div class="link-entry">
+                <label class="sr-only" for="linkLabel">Nombre del enlace</label>
+                <input id="linkLabel" type="text" maxlength="80" placeholder="Nombre del enlace">
+                <label class="sr-only" for="linkUrl">Dirección web</label>
+                <input id="linkUrl" type="url" placeholder="https://...">
+                <button id="addLink" class="secondary-button" type="button">Añadir enlace</button>
+              </div>
+            </div>
+            <p class="field-hint">Máximo 4 imágenes por registro. Se optimizan al cargarlas.</p>
+            <div id="evidencePreview" class="evidence-preview" aria-live="polite"></div>
+          </div>
+
+          <button id="saveEntry" class="primary-button" type="submit">＋ Agregar a la bitácora</button>
+          <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+        </details>
+      </section>
+
+      <section class="timeline-section" aria-labelledby="timelineTitle">
+        <div class="section-heading timeline-heading">
+          <div>
+            <h2 id="timelineTitle">Línea de tiempo</h2>
+            <p id="recordCount" class="muted">0 registros</p>
+          </div>
+        </div>
+        <div class="filters">
+          <label class="search-field">
+            <span class="sr-only">Buscar en actividades</span>
+            <input id="searchInput" type="search" placeholder="Buscar actividades o resultados">
+          </label>
+          <label class="filter-select">
+            <span class="sr-only">Filtrar por área</span>
+            <select id="projectFilter">
+              <option value="">Todas las áreas</option>
+            </select>
+          </label>
+          <label class="filter-select">
+            <span class="sr-only">Filtrar por estado</span>
+            <select id="statusFilter">
+              <option value="">Todos los estados</option>
+              <option>Completada</option>
+              <option>En progreso</option>
+              <option>Pendiente de revisión</option>
+            </select>
+          </label>
+        </div>
+        <div id="timeline" class="timeline" aria-live="polite"></div>
+      </section>
+
+      <footer class="privacy-note">
+        <span class="privacy-dot" aria-hidden="true"></span>
+        <p id="privacyText">Cargando configuración de almacenamiento…</p>
+        <button id="adminToggle" class="text-button" type="button">Administrar</button>
+        <a class="text-button" href="https://docs.google.com/spreadsheets/d/1evpD2C13HlnrY85QGI1qYd0D-6PiBw17nAMjWr3j4Qw/edit" target="_blank" rel="noopener noreferrer">Ver hoja</a>
+        <button id="exportButton" class="text-button" type="button">Descargar copia</button>
+        <label class="text-button import-button" for="importInput">Restaurar copia</label>
+        <input id="importInput" class="sr-only" type="file" accept="application/json,.json">
+      </footer>
+    </main>
+
+    <dialog id="imageDialog" class="image-dialog">
+      <form method="dialog"><button class="dialog-close" aria-label="Cerrar imagen">×</button></form>
+      <img id="dialogImage" alt="Vista ampliada de la evidencia">
+      <p id="dialogCaption"></p>
+    </dialog>
+    <dialog id="deleteDialog" class="confirm-dialog" aria-labelledby="deleteTitle" aria-describedby="deleteDescription">
+      <div class="confirm-dialog-content">
+        <h2 id="deleteTitle">¿Eliminar esta actividad?</h2>
+        <p id="deleteDescription">Esta acción es permanente y también eliminará sus evidencias.</p>
+        <div class="delete-summary">
+          <strong id="deleteActivity"></strong>
+          <span id="deleteMeta"></span>
+        </div>
+        <div class="dialog-actions">
+          <button id="cancelDelete" class="secondary-button" type="button">Cancelar</button>
+          <button id="confirmDelete" class="danger-button" type="button">Eliminar actividad</button>
+        </div>
+      </div>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

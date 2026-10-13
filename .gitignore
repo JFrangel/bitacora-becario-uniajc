@@ -1,0 +1,14 @@
+# Local Netlify folder
+.netlify
+
+# Generated output and local dependencies
+dist-public/
+node_modules/
+publish-netlify/
+
+# Private project data and backend credentials
+*.xlsx
+apps-script/
+
+# Internal reference material
+propuesta-pagina-*.png
