@@ -14,6 +14,8 @@ const ui = {
   hours: document.querySelector("#entryHours"),
   project: document.querySelector("#entryProject"),
   activity: document.querySelector("#entryActivity"),
+  development: document.querySelector("#entryDevelopment"),
+  observations: document.querySelector("#entryObservations"),
   result: document.querySelector("#entryResult"),
   photoInput: document.querySelector("#photoInput"),
   evidencePreview: document.querySelector("#evidencePreview"),
@@ -83,6 +85,8 @@ function requestRemoteEntries() {
           ...entry,
           id: String(entry.id || ""),
           hours: Number(entry.hours || 0),
+          nextStep: String(entry.nextStep || ""),
+          blocker: String(entry.blocker || ""),
           links: Array.isArray(entry.links) ? entry.links : parseJson(entry.links),
           photos: Array.isArray(entry.photos) ? entry.photos : parseJson(entry.photos),
           createdAt: Number(entry.createdAt) || Date.parse(recordedAt) || 0,
@@ -380,9 +384,16 @@ function renderEntry(entry) {
 
   const copy = document.createElement("div");
   copy.className = "entry-copy";
-  for (const [label, text] of [["Actividad", entry.activity], ["Resultado", entry.result]]) {
+  const details = [
+    ["Actividad / objetivo", entry.activity, "actividad"],
+    ["Desarrollo", entry.nextStep || "", "development"],
+    ["Resultado", entry.result, "result"],
+    ["Observaciones", entry.blocker || "", "observaciones"],
+  ];
+  for (const [label, text, key] of details) {
+    if (!text) continue;
     const detail = document.createElement("div");
-    detail.className = `entry-detail entry-detail-${label.toLocaleLowerCase("es-CO")}`;
+    detail.className = `entry-detail entry-detail-${key}`;
     const heading = document.createElement("span");
     heading.className = "entry-label";
     heading.textContent = label;
@@ -436,7 +447,7 @@ function renderTimeline() {
   const visible = entries.filter((entry) => {
     if (project && entry.project !== project) return false;
     if (status && entry.status !== status) return false;
-    const searchable = `${entry.project} ${entry.activity} ${entry.result} ${entry.links?.map((link) => link.label).join(" ") || ""}`.toLocaleLowerCase("es-CO");
+    const searchable = `${entry.project} ${entry.activity} ${entry.nextStep || ""} ${entry.result} ${entry.blocker || ""} ${entry.links?.map((link) => link.label).join(" ") || ""}`.toLocaleLowerCase("es-CO");
     return !query || searchable.includes(query);
   });
   ui.timeline.replaceChildren();
@@ -537,6 +548,8 @@ function beginEdit(entry) {
   ui.hours.value = formatHours(entry.hours);
   ui.project.value = entry.project;
   ui.activity.value = entry.activity;
+  ui.development.value = entry.nextStep || "";
+  ui.observations.value = entry.blocker || "";
   ui.result.value = entry.result;
   const selectedStatus = ui.form.querySelector(`input[name="status"][value="${CSS.escape(entry.status)}"]`);
   if (selectedStatus) selectedStatus.checked = true;
@@ -643,6 +656,8 @@ async function saveEntry(event) {
     hours: parseHours(ui.hours.value),
     project: ui.project.value.trim(),
     activity: ui.activity.value.trim(),
+    nextStep: ui.development.value.trim(),
+    blocker: ui.observations.value.trim(),
     result: ui.result.value.trim(),
     status: selectedStatus?.value || "Completada",
     photos: [...attachedPhotos, ...pendingPhotos],
@@ -695,6 +710,8 @@ function remoteEntryMatches(saved, expected) {
     (saved.photos || []).every((photo, index) => photo.id === expected.photos[index]?.id && photo.name === expected.photos[index]?.name);
   return saved.date === expected.date && saved.project === expected.project &&
     saved.activity === expected.activity && saved.result === expected.result &&
+    String(saved.nextStep || "") === String(expected.nextStep || "") &&
+    String(saved.blocker || "") === String(expected.blocker || "") &&
     Number(saved.hours) === Number(expected.hours) && saved.status === expected.status && linksMatch && photosMatch;
 }
 
