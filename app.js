@@ -387,8 +387,8 @@ function renderEntry(entry) {
   const copy = document.createElement("div");
   copy.className = "entry-copy";
   const details = [
-    ["Objetivo", entry.objective || "", "objective"],
     ["Actividad", entry.activity, "actividad"],
+    ["Objetivo", entry.objective || "", "objective"],
     ["Desarrollo", entry.nextStep || "", "development"],
     ["Resultado", entry.result, "result"],
     ["Observaciones", entry.blocker || "", "observaciones"],
