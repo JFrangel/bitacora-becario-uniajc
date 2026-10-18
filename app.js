@@ -13,6 +13,7 @@ const ui = {
   date: document.querySelector("#entryDate"),
   hours: document.querySelector("#entryHours"),
   project: document.querySelector("#entryProject"),
+  objective: document.querySelector("#entryObjective"),
   activity: document.querySelector("#entryActivity"),
   development: document.querySelector("#entryDevelopment"),
   observations: document.querySelector("#entryObservations"),
@@ -85,6 +86,7 @@ function requestRemoteEntries() {
           ...entry,
           id: String(entry.id || ""),
           hours: Number(entry.hours || 0),
+          objective: String(entry.objective || ""),
           nextStep: String(entry.nextStep || ""),
           blocker: String(entry.blocker || ""),
           links: Array.isArray(entry.links) ? entry.links : parseJson(entry.links),
@@ -385,7 +387,8 @@ function renderEntry(entry) {
   const copy = document.createElement("div");
   copy.className = "entry-copy";
   const details = [
-    ["Actividad / objetivo", entry.activity, "actividad"],
+    ["Objetivo", entry.objective || "", "objective"],
+    ["Actividad", entry.activity, "actividad"],
     ["Desarrollo", entry.nextStep || "", "development"],
     ["Resultado", entry.result, "result"],
     ["Observaciones", entry.blocker || "", "observaciones"],
@@ -447,7 +450,7 @@ function renderTimeline() {
   const visible = entries.filter((entry) => {
     if (project && entry.project !== project) return false;
     if (status && entry.status !== status) return false;
-    const searchable = `${entry.project} ${entry.activity} ${entry.nextStep || ""} ${entry.result} ${entry.blocker || ""} ${entry.links?.map((link) => link.label).join(" ") || ""}`.toLocaleLowerCase("es-CO");
+    const searchable = `${entry.project} ${entry.objective || ""} ${entry.activity} ${entry.nextStep || ""} ${entry.result} ${entry.blocker || ""} ${entry.links?.map((link) => link.label).join(" ") || ""}`.toLocaleLowerCase("es-CO");
     return !query || searchable.includes(query);
   });
   ui.timeline.replaceChildren();
@@ -547,6 +550,7 @@ function beginEdit(entry) {
   ui.date.value = entry.date;
   ui.hours.value = formatHours(entry.hours);
   ui.project.value = entry.project;
+  ui.objective.value = entry.objective || "";
   ui.activity.value = entry.activity;
   ui.development.value = entry.nextStep || "";
   ui.observations.value = entry.blocker || "";
@@ -655,6 +659,7 @@ async function saveEntry(event) {
     date: ui.date.value,
     hours: parseHours(ui.hours.value),
     project: ui.project.value.trim(),
+    objective: ui.objective.value.trim(),
     activity: ui.activity.value.trim(),
     nextStep: ui.development.value.trim(),
     blocker: ui.observations.value.trim(),
@@ -709,6 +714,7 @@ function remoteEntryMatches(saved, expected) {
   const photosMatch = (saved.photos || []).length === (expected.photos || []).length &&
     (saved.photos || []).every((photo, index) => photo.id === expected.photos[index]?.id && photo.name === expected.photos[index]?.name);
   return saved.date === expected.date && saved.project === expected.project &&
+    String(saved.objective || "") === String(expected.objective || "") &&
     saved.activity === expected.activity && saved.result === expected.result &&
     String(saved.nextStep || "") === String(expected.nextStep || "") &&
     String(saved.blocker || "") === String(expected.blocker || "") &&
