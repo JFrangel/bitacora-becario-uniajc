@@ -122,6 +122,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .entry-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .entry-date { margin: 0; color: var(--text); font-size: 14px; font-weight: 650; }
 .entry-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 5px 0 13px; color: var(--muted); font-size: 11px; }
+.entry-updated { color: var(--subtle); font-size: 10px; }
 .meta-dot { color: var(--subtle); }
 .status-tag { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 10px; line-height: 1.2; }
 .status-tag[data-state="Completada"] { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--accent-strong); }

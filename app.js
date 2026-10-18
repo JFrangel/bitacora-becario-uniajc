@@ -262,6 +262,16 @@ function formatDate(dateValue, includeWeekday = true) {
   }).format(date);
 }
 
+function formatRecordedAt(timestamp) {
+  return new Intl.DateTimeFormat("es-CO", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
+}
+
 function makeButton(label, className, title) {
   const button = document.createElement("button");
   button.type = "button";
@@ -352,6 +362,18 @@ function renderEntry(entry) {
     meta.append(item);
   });
   meta.append(statusTag(entry.status));
+  if (entry.updatedAt > 0) {
+    const separator = document.createElement("span");
+    separator.className = "meta-dot";
+    separator.setAttribute("aria-hidden", "true");
+    separator.textContent = "·";
+    meta.append(separator);
+    const updated = document.createElement("time");
+    updated.className = "entry-updated";
+    updated.dateTime = new Date(entry.updatedAt).toISOString();
+    updated.textContent = `Última actualización: ${formatRecordedAt(entry.updatedAt)}`;
+    meta.append(updated);
+  }
   headingGroup.append(meta);
   top.append(headingGroup);
   const actions = document.createElement("div");
