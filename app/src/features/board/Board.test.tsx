@@ -104,6 +104,18 @@ describe('Board · filters', () => {
     expect(screen.getByRole('button', { name: 'Mostrar menos proyectos' }).getAttribute('aria-expanded')).toBe('true');
   });
 
+  it('offers collapse and expand controls to the read-only board', async () => {
+    const manyProjects = Array.from({ length: 5 }, (_, index) => ({ id: `p${index + 1}`, name: `Área ${index + 1}`, colorSlot: index + 1 }));
+    const user = userEvent.setup();
+    draw([], { projects: manyProjects, me: null, canEdit: false });
+
+    await user.click(screen.getByRole('button', { name: 'Mostrar menos proyectos' }));
+    expect(screen.queryByRole('button', { name: 'Área 5' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Mostrar 2 proyectos más' }).getAttribute('aria-expanded')).toBe('false');
+    await user.click(screen.getByRole('button', { name: 'Mostrar 2 proyectos más' }));
+    expect(screen.getByRole('button', { name: 'Área 5' })).toBeTruthy();
+  });
+
   it('keeps the selected project visible when the list is collapsed', async () => {
     const manyProjects = Array.from({ length: 5 }, (_, index) => ({ id: `p${index + 1}`, name: `Área ${index + 1}`, colorSlot: index + 1 }));
     const user = userEvent.setup();
