@@ -87,6 +87,34 @@ describe('Board · filters', () => {
     expect([...document.querySelectorAll('.col-count')].map((h) => h.textContent)).toEqual(['2', '1', '0', '0']);
   });
 
+  it('collapses long project lists and expands them again', async () => {
+    const manyProjects = Array.from({ length: 5 }, (_, index) => ({ id: `p${index + 1}`, name: `Área ${index + 1}`, colorSlot: index + 1 }));
+    const user = userEvent.setup();
+    draw([], { projects: manyProjects });
+
+    expect(screen.getByRole('button', { name: 'Área 5' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Mostrar menos proyectos' }));
+    expect(screen.queryByRole('button', { name: 'Área 4' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Área 5' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Mostrar 2 proyectos más' }).getAttribute('aria-expanded')).toBe('false');
+
+    await user.click(screen.getByRole('button', { name: 'Mostrar 2 proyectos más' }));
+    expect(screen.getByRole('button', { name: 'Área 4' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Área 5' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mostrar menos proyectos' }).getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('keeps the selected project visible when the list is collapsed', async () => {
+    const manyProjects = Array.from({ length: 5 }, (_, index) => ({ id: `p${index + 1}`, name: `Área ${index + 1}`, colorSlot: index + 1 }));
+    const user = userEvent.setup();
+    draw([], { projects: manyProjects });
+
+    await user.click(screen.getByRole('button', { name: 'Área 5' }));
+    await user.click(screen.getByRole('button', { name: 'Mostrar menos proyectos' }));
+    expect(screen.getByRole('button', { name: 'Área 5' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Mostrar 2 proyectos más' })).toBeTruthy();
+  });
+
   it('searches ignoring accents', async () => {
     draw(tasks());
     await userEvent.setup().type(screen.getByRole('searchbox', { name: 'Buscar tarea' }), 'analisis');

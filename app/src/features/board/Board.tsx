@@ -40,10 +40,12 @@ const PRIORITIES = [
   { value: 2, label: 'Media' },
   { value: 3, label: 'Alta' },
 ];
+const PROJECT_FILTER_PREVIEW_COUNT = 3;
 
 /** Vista del tablero: indicadores, filtros y las cuatro columnas. */
 export function Board({ tasks, projects, people, summary, today, me, canEdit, landedId, onOpenTask, onNewTask, onMove }: BoardProps) {
   const [filters, setFilters] = useState<BoardFilters>({});
+  const [projectsExpanded, setProjectsExpanded] = useState(true);
   const [compact, setCompact] = usePersistentFlag('bitacora.boardCompact');
   const isPhone = useIsPhone();
   const boardRef = useRef<HTMLDivElement>(null);
@@ -53,6 +55,13 @@ export function Board({ tasks, projects, people, summary, today, me, canEdit, la
   // La búsqueda y los filtros se aplican ANTES de contar y de recortar.
   const visible = useMemo(() => filterTasks(tasks, filters, me), [tasks, filters, me]);
   const set = (patch: Partial<BoardFilters>) => setFilters((current) => ({ ...current, ...patch }));
+  const previewProjects = projects.slice(0, PROJECT_FILTER_PREVIEW_COUNT);
+  if (filters.projectId && !previewProjects.some((project) => project.id === filters.projectId)) {
+    const selected = projects.find((project) => project.id === filters.projectId);
+    if (selected && previewProjects.length) previewProjects[previewProjects.length - 1] = selected;
+  }
+  const visibleProjects = projectsExpanded ? projects : previewProjects;
+  const hiddenProjectCount = projects.length - visibleProjects.length;
 
   let startIndex = 0;
   const columns = COLUMNS.map((column) => {
@@ -102,11 +111,16 @@ export function Board({ tasks, projects, people, summary, today, me, canEdit, la
         <button className={`chip${!filters.projectId ? ' on' : ''}`} type="button" aria-pressed={!filters.projectId} style={{ '--i': 0 } as CSSProperties} onClick={() => set({ projectId: undefined })}>
           Todos
         </button>
-        {projects.map((project, index) => (
+        {visibleProjects.map((project, index) => (
           <button key={project.id} className={`chip${filters.projectId === project.id ? ' on' : ''}`} type="button" aria-pressed={filters.projectId === project.id} style={{ '--i': index + 1 } as CSSProperties} onClick={() => set({ projectId: project.id })}>
             {project.name}
           </button>
         ))}
+        {projects.length > PROJECT_FILTER_PREVIEW_COUNT && (
+          <button className="project-toggle" type="button" aria-expanded={projectsExpanded} aria-label={projectsExpanded ? 'Mostrar menos proyectos' : `Mostrar ${hiddenProjectCount} proyectos más`} onClick={() => setProjectsExpanded((expanded) => !expanded)}>
+            {projectsExpanded ? 'Mostrar menos' : `Mostrar ${hiddenProjectCount} más`}
+          </button>
+        )}
         {me && (
           <button className={`chip${filters.onlyMine ? ' on' : ''}`} type="button" aria-pressed={Boolean(filters.onlyMine)} onClick={() => set({ onlyMine: !filters.onlyMine })}>
             Solo mías
