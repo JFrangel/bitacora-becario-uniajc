@@ -1,0 +1,22 @@
+# Bitácora (aplicación React + Convex). En Netlify: «Base directory» = app, y la variable CONVEX_DEPLOY_KEY (ver CUTOVER.md).
+# `convex deploy` publica las funciones del servidor y ejecuta la construcción con VITE_CONVEX_URL ya definida.
+[build]
+  command = "npx convex deploy --cmd 'npm run build'"
+  publish = "dist"
+
+# Seguridad: sin `unsafe-inline` ni `unsafe-eval`. Los estilos se aplican por el modelo de objetos de CSS, que `style-src 'self'` permite.
+# `connect-src` y `img-src` abren solo *.convex.cloud (datos en tiempo real e imágenes guardadas); nada más sale del dominio.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data: https://*.convex.cloud; font-src 'self'; connect-src 'self' https://*.convex.cloud wss://*.convex.cloud; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+    X-Robots-Tag = "noindex"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Los archivos de /assets llevan el hash en el nombre: pueden guardarse un año.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

@@ -1,0 +1,10 @@
+/* Orden = cascada de la maqueta aprobada: base, los tres estilos, componentes, temas oscuros y diseño adaptable. */
+@import './fonts.css';
+@import './base.css';
+@import './themes/papel.css';
+@import './themes/grafito.css';
+@import './themes/tinta.css';
+@import './components.css';
+@import './themes/dark.css';
+@import './layout.css';
+@import './app.css';

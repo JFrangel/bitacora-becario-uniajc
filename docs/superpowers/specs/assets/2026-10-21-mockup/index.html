@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maqueta v5 · Mi bitácora de actividades</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Anton&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./direccion-visual.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="shell-top">
+      <div>
+        <p class="kicker">Maqueta v5 · Tablero + Bitácora</p>
+        <h2>Tarjetas con scroll animado, subtareas, color por columna y la Bitácora rediseñada.</h2>
+      </div>
+      <div class="chrome-actions"><button class="chrome-btn" id="gateBtn" type="button">Ver inicio de sesión</button><button class="chrome-btn" id="roBtn" type="button">Ver como solo lectura</button><button class="chrome-btn" id="seedMany" type="button">Simular 10 tareas más</button></div>
+    </header>
+    <p class="shell-caption">Desplaza una columna: sin barra visible, con bordes que se difuminan y tarjetas que aparecen al entrar en vista (como <b>AnimatedList</b> de React Bits). Pulsa una tarjeta para ver su detalle y sus <b>subtareas</b>. En <b>Bitácora</b> pulsa «＋ Registrar actividad»: los campos son los mismos, pero ahora viven en el panel lateral.</p>
+
+    <div class="frame">
+      <div class="app" id="app" data-theme="b" data-mode="dark">
+        <header class="nav">
+          <div class="brand"><span class="mark"></span><span class="brand-text">Bitácora<em>.</em></span></div>
+          <nav class="tabs" id="tabs" aria-label="Secciones">
+            <span class="indicator" id="indicator"></span>
+            <button class="tab active" data-view="board">Tablero</button>
+            <button class="tab" data-view="calendar">Calendario</button>
+            <button class="tab" data-view="journal">Bitácora <span class="badge" id="draftBadge" data-n="1">1</span></button>
+            <button class="tab" data-view="history">Historial</button>
+          </nav>
+          <div class="who">
+            <button class="invite" id="invite">Invitar</button>
+            <div class="appearance">
+              <button class="invite" id="appBtn" aria-haspopup="true" aria-expanded="false">Apariencia</button>
+              <div class="pop" id="pop" hidden>
+                <p class="pop-label">Estilo</p>
+                <div class="pop-styles">
+                  <button class="opt" data-style="b"><span class="sw sw-b"></span>Grafito<small>predeterminado</small></button>
+                  <button class="opt" data-style="a"><span class="sw sw-a"></span>Papel</button>
+                  <button class="opt" data-style="c"><span class="sw sw-c"></span>Tinta viva</button>
+                </div>
+                <p class="pop-label">Tema</p>
+                <div class="pop-mode">
+                  <button class="mode" data-mode="dark">Oscuro</button>
+                  <button class="mode" data-mode="light">Claro</button>
+                </div>
+                <p class="pop-note" id="popNote"></p>
+              </div>
+            </div>
+            <span class="who-text">Tú · Becario</span>
+            <button class="avatar" id="profileBtn" type="button" data-who="B" aria-haspopup="dialog" aria-label="Ver mi perfil" title="Mi perfil">B</button>
+          </div>
+        </header>
+
+        <main class="stage enter" id="stage">
+          <section class="view active" id="view-board">
+            <div class="head">
+              <div>
+                <p class="eyebrow" id="today"></p>
+                <h1>Tablero<em><span>.</span></em></h1>
+              </div>
+              <div class="stats" aria-label="Resumen">
+                <div class="stat" style="--i:0"><b id="s-active">0</b><span>Activas</span></div>
+                <div class="stat" style="--i:1"><b id="s-week">0</b><span>Vencen esta semana</span></div>
+                <div class="stat" style="--i:2"><b id="s-hours">0</b><span>Horas registradas</span></div>
+                <div class="stat" style="--i:3"><b id="s-drafts">0</b><span>Por documentar</span></div>
+              </div>
+            </div>
+            <div class="filters">
+              <div id="chips" style="display:contents"></div>
+              <button class="chip dens" id="densBtn" type="button" aria-pressed="false">Compacta</button>
+              <input class="search" id="search" type="search" placeholder="Buscar tarea…" aria-label="Buscar tarea">
+              <button class="newtask" id="newTask" type="button">＋ Nueva tarea</button>
+            </div>
+            <div class="board" id="board"></div>
+          </section>
+
+          <section class="view" id="view-calendar">
+            <div class="head cal-bar">
+              <div>
+                <p class="eyebrow">Fechas límite y horas del mes</p>
+                <h2 id="calTitle"></h2>
+              </div>
+              <div class="cal-nav">
+                <button id="calPrev" aria-label="Mes anterior">←</button>
+                <button id="calNext" aria-label="Mes siguiente">→</button>
+              </div>
+            </div>
+            <div class="cal">
+              <div class="cal-grid" id="calGrid"></div>
+              <aside class="upcoming">
+                <h3>Próximos vencimientos</h3>
+                <ul id="upList"></ul>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view" id="view-journal">
+            <div class="head">
+              <div>
+                <p class="eyebrow">Seguimiento académico</p>
+                <h1>Bitácora<em><span>.</span></em></h1>
+                <p class="institution">Institución Universitaria Antonio José Camacho</p>
+                <span class="lock">Privada · solo tú escribes aquí</span>
+              </div>
+              <div class="stats" aria-label="Resumen de la bitácora">
+                <div class="stat" style="--i:0"><b id="j-count">0</b><span>Actividades</span></div>
+                <div class="stat" style="--i:1"><b id="j-hours">0</b><span>Horas registradas</span></div>
+                <div class="stat" style="--i:2"><b id="j-done">0</b><span>Completadas</span></div>
+                <div class="stat" style="--i:3"><b id="j-drafts">0</b><span>Por documentar</span></div>
+              </div>
+            </div>
+
+            <div class="jtools">
+              <input class="search" id="jsearch" type="search" placeholder="Buscar actividades o resultados" aria-label="Buscar en actividades">
+              <select class="jsel" id="jproj" aria-label="Filtrar por área"><option value="">Todas las áreas</option></select>
+              <select class="jsel" id="jstatus" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option>
+                <option>Completada</option>
+                <option>En progreso</option>
+                <option>Pendiente de revisión</option>
+              </select>
+              <button class="chip" id="jdraft" type="button" aria-pressed="false">Solo borradores</button>
+              <button class="newtask" id="newEntry" type="button">＋ Registrar actividad</button>
+            </div>
+            <p class="jcount" id="jcount"></p>
+
+            <div class="tl sl-wrap" id="tl">
+              <div class="tl-scroll sl" id="journalScroll">
+                <div class="tl-track" id="journalList"></div>
+              </div>
+            </div>
+
+            <div class="journal-foot">
+              <button type="button" id="exportBtn">Descargar copia</button>
+              <button type="button" id="importBtn">Restaurar copia</button>
+            </div>
+
+            <aside class="journal-badge" id="journalBadge" aria-label="Mi carné">
+              <div class="badge-stage" id="journalBadgeStage" role="img" aria-label="Carné"></div>
+              <div class="badge-hit" id="journalBadgeHit" hidden></div>
+            </aside>
+          </section>
+
+          <section class="view" id="view-history">
+            <div class="head">
+              <div>
+                <p class="eyebrow">Qué cambió, quién y cuándo</p>
+                <h1>Historial<em><span>.</span></em></h1>
+              </div>
+            </div>
+            <ul class="hist" id="histList"></ul>
+          </section>
+        </main>
+
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        <div class="scrim" id="scrim"></div>
+
+        <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+          <header class="drawer-head">
+            <h2 id="drawerTitle">Nueva tarea</h2>
+            <button class="x" id="drawerClose" type="button" aria-label="Cerrar">×</button>
+          </header>
+          <form class="fill-form drawer-form" id="taskForm" novalidate>
+            <label><span class="lbl">Nombre de la tarea</span><input name="title" type="text" maxlength="200" placeholder="Ej. Revisar cláusulas del convenio" autocomplete="off"></label>
+            <label><span class="lbl">Descripción <small>(opcional)</small></span><textarea name="description" rows="3" maxlength="2000" placeholder="¿Qué hay que hacer y qué se espera como resultado?"></textarea></label>
+            <p class="field-note">Evita datos personales de terceros.</p>
+            <div class="subs-edit">
+              <span class="lbl">Subtareas <small>(opcional)</small></span>
+              <div class="sub-list" id="subList"></div>
+              <button type="button" class="sub-add" id="subAdd">＋ Añadir otra</button>
+            </div>
+            <label><span class="lbl">Proyecto o área</span><input name="project" type="text" list="projectOptions" maxlength="60" placeholder="Escribe o elige un proyecto" autocomplete="off"></label>
+            <div class="grid2">
+              <label><span class="lbl">Responsable</span>
+                <select name="assignee">
+                  <option value="">Sin asignar</option>
+                  <option value="D">Director</option>
+                  <option value="S">Supervisora</option>
+                  <option value="B">Tú</option>
+                </select>
+              </label>
+              <label><span class="lbl">Fecha límite <small>(opcional)</small></span><input name="due" type="date"></label>
+            </div>
+            <fieldset class="prio-set">
+              <legend>Prioridad</legend>
+              <div class="row">
+                <label class="pchoice"><input type="radio" name="prio" value="1"><span class="prio" data-p="1" aria-hidden="true"><i></i><i></i><i></i></span>Baja</label>
+                <label class="pchoice"><input type="radio" name="prio" value="2" checked><span class="prio" data-p="2" aria-hidden="true"><i></i><i></i><i></i></span>Media</label>
+                <label class="pchoice"><input type="radio" name="prio" value="3"><span class="prio" data-p="3" aria-hidden="true"><i></i><i></i><i></i></span>Alta</label>
+              </div>
+            </fieldset>
+            <label><span class="lbl">Estado</span>
+              <select name="status">
+                <option value="todo">Por hacer</option>
+                <option value="doing">En curso</option>
+                <option value="review">En revisión</option>
+                <option value="done">Completada</option>
+              </select>
+            </label>
+            <p class="form-error" id="taskMsg" role="alert"></p>
+            <div class="form-actions">
+              <button type="submit" class="fill primary" id="taskSubmit">Crear tarea</button>
+              <button type="button" class="ghost" id="taskCancel">Cancelar</button>
+              <button type="button" class="ghost danger" id="taskDelete" hidden>Eliminar tarea</button>
+            </div>
+          </form>
+          <section class="drawer-hist" id="taskHist" hidden>
+            <h3>Actividad de esta tarea</h3>
+            <ul id="taskHistList"></ul>
+          </section>
+        </aside>
+
+        <aside class="drawer" id="entryDrawer" role="dialog" aria-modal="true" aria-labelledby="entryTitle" aria-hidden="true">
+          <header class="drawer-head">
+            <h2 id="entryTitle">Nuevo registro</h2>
+            <button class="x" id="entryClose" type="button" aria-label="Cerrar">×</button>
+          </header>
+          <div class="draft" id="entryBanner" hidden><span class="dot"></span>Completa los detalles de esta tarea</div>
+          <form class="fill-form drawer-form" id="entryForm" novalidate>
+            <div class="grid2">
+              <label><span class="lbl">Fecha</span><input name="date" type="date" value="2026-10-21" required></label>
+              <label><span class="lbl">Horas trabajadas</span><input name="hours" type="text" inputmode="decimal" maxlength="5" placeholder="Ej. 0,5" value="2" required></label>
+            </div>
+            <label><span class="lbl">Proyecto o área</span><input name="project" type="text" list="projectOptions" maxlength="100" placeholder="Escribe o elige un proyecto" autocomplete="off" required></label>
+            <datalist id="projectOptions"></datalist>
+            <label><span class="lbl">Título de la actividad</span><textarea name="activity" rows="2" maxlength="1500" placeholder="Ej. Revisión inicial de la plataforma y sus funcionalidades" required></textarea></label>
+            <label><span class="lbl">Objetivo</span><textarea name="objective" rows="2" maxlength="1500" placeholder="¿Qué se buscaba lograr con esta actividad?"></textarea></label>
+            <label><span class="lbl">Desarrollo</span><textarea name="development" rows="3" maxlength="1500" placeholder="Describe el proceso, las tareas y los pasos realizados."></textarea></label>
+            <label><span class="lbl">Resultado obtenido</span><textarea name="result" rows="3" maxlength="1500" placeholder="Ej. Identifiqué los documentos pendientes y dejé las dudas para revisión." required></textarea></label>
+            <label><span class="lbl">Observaciones</span><textarea name="observations" rows="2" maxlength="1500" placeholder="Anota hallazgos, pendientes o comentarios relevantes."></textarea></label>
+            <fieldset class="status-set">
+              <legend>Estado</legend>
+              <label class="radio"><input type="radio" name="status" value="Completada" checked><span>Completada</span></label>
+              <label class="radio"><input type="radio" name="status" value="En progreso"><span>En progreso</span></label>
+              <label class="radio"><input type="radio" name="status" value="Pendiente de revisión"><span>Pendiente de revisión</span></label>
+            </fieldset>
+            <div class="evidence">
+              <div>
+                <h4>Evidencias</h4>
+                <p>Adjunta imágenes o enlaces relacionados con esta actividad.</p>
+              </div>
+              <div class="ev-actions">
+                <label class="filebtn" for="photoInput">＋ Añadir imágenes</label>
+                <input id="photoInput" class="sr-only" type="file" accept="image/*" multiple>
+                <div class="link-row">
+                  <input id="linkLabel" type="text" maxlength="80" placeholder="Nombre del enlace" aria-label="Nombre del enlace">
+                  <input id="linkUrl" type="url" placeholder="https://..." aria-label="Dirección web">
+                  <button type="button" class="ghost2" id="addLink">Añadir enlace</button>
+                </div>
+              </div>
+              <p class="ev-hint">Máximo 4 imágenes por registro. Se optimizan al cargarlas.</p>
+              <div class="rchips" id="regChips"></div>
+            </div>
+            <p class="form-error" id="regMsg" role="alert"></p>
+            <div class="form-actions">
+              <button type="submit" class="fill primary" id="entrySubmit">＋ Agregar a la bitácora</button>
+              <button type="button" class="ghost" id="entryCancel">Cancelar</button>
+              <button type="button" class="ghost danger" id="entryDelete" hidden>Eliminar actividad</button>
+            </div>
+          </form>
+        </aside>
+
+        <aside class="drawer profile" id="profileDrawer" role="dialog" aria-modal="true" aria-labelledby="profileTitle" aria-hidden="true">
+          <header class="drawer-head">
+            <h2 id="profileTitle">Mi perfil</h2>
+            <button class="x" id="profileClose" type="button" aria-label="Cerrar">×</button>
+          </header>
+          <div id="profileView">
+            <div class="badge-stage" id="badgeStage" role="img" aria-label="Carné"></div>
+            <p class="badge-hint" id="badgeHint">Arrástralo, lánzalo o púlsalo para girarlo.</p>
+            <dl class="profile-facts" id="profileFacts"></dl>
+            <div class="profile-actions">
+              <button class="fill primary" id="profileEditBtn" type="button">Editar perfil</button>
+              <button class="ghost" id="designsBtn" type="button">Ver diseños</button>
+              <button class="ghost" id="logoutBtn" type="button">Cerrar sesión</button>
+            </div>
+          </div>
+          <form class="fill-form drawer-form" id="profileForm" hidden novalidate>
+            <div class="photo-edit">
+              <canvas id="cropCanvas" class="crop-canvas" width="440" height="440" tabindex="0" role="img" aria-label="Encuadre de la foto. Arrastra para moverla o usa las flechas."></canvas>
+              <div class="photo-ctrl">
+                <label class="filebtn" for="photoFile">＋ Subir foto</label>
+                <input id="photoFile" class="sr-only" type="file" accept="image/*">
+                <label class="zoom"><span class="lbl">Acercar</span><input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1"></label>
+                <button type="button" class="ghost2" id="photoRemove">Quitar foto</button>
+              </div>
+            </div>
+            <label class="check"><input type="checkbox" id="enhanceToggle" checked><span>Mejorar imagen</span></label>
+            <p class="ev-hint">Arrastra la foto para encuadrar tu cara. Se guarda a 1024 × 1024 px. Sin foto se usan tus iniciales.</p>
+            <label><span class="lbl">Nombre</span><input name="name" type="text" maxlength="60" autocomplete="off"></label>
+            <div class="grid2">
+              <label><span class="lbl">Rol</span><input name="role" type="text" maxlength="60" autocomplete="off"></label>
+              <label><span class="lbl">Semestre <small>(opcional)</small></span><input name="term" type="text" maxlength="30" autocomplete="off"></label>
+            </div>
+            <label><span class="lbl">Programa <small>(opcional)</small></span><input name="program" type="text" maxlength="80" autocomplete="off"></label>
+            <label><span class="lbl">Institución <small>(opcional)</small></span><input name="school" type="text" maxlength="100" autocomplete="off"></label>
+            <label><span class="lbl">Grupo de investigación <small>(opcional)</small></span><input name="group" type="text" maxlength="60" autocomplete="off" placeholder="Ej. AthenIA"></label>
+            <p class="form-error" id="profileMsg" role="alert"></p>
+            <div class="form-actions">
+              <button type="submit" class="fill primary">Guardar perfil</button>
+              <button type="button" class="ghost" id="profileCancel">Cancelar</button>
+            </div>
+          </form>
+        </aside>
+
+        <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle" hidden>
+          <div class="gate-brand brand"><span class="mark"></span><span class="brand-text">Bitácora<em>.</em></span></div>
+          <main class="gate-main" id="gateBody"></main>
+          <footer class="gate-foot"><span>Pantallas de entrada (solo en la maqueta)</span><div class="gate-tabs" id="gateTabs"></div></footer>
+        </div>
+
+        <div class="gallery" id="designGallery" role="dialog" aria-modal="true" aria-labelledby="galleryTitle" hidden>
+          <header class="gallery-head">
+            <h2 id="galleryTitle">Diseños del carné</h2>
+            <button class="x" id="designClose" type="button" aria-label="Cerrar">×</button>
+          </header>
+          <p class="gallery-note">Frente y reverso de cada diseño, con tus datos y los colores del estilo activo. Elige uno y se aplica a tu carné.</p>
+          <div class="design-grid" id="designGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="shell-foot">
+      <p><b>Probar:</b> arrastra «Verificar registros de CALIFRESCA» a <i>Completada</i> (o usa la flecha →): la tarjeta recibe su ✓ y, al ser tuya, crea un borrador en la Bitácora; las horas solo suman cuando las escribes y guardas. En la app real el arrastre tendrá además un menú accesible para mover la tarjeta sin mouse, y los efectos serán componentes de React Bits (aquí están imitados en HTML simple).</p>
+    </footer>
+  </div>
+  <script src="./direccion-visual.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+/* Bitácora: ajustes de la aplicación real sobre los estilos de la maqueta. */
+
+/* Evidencias en la tarjeta: miniaturas que se amplían al pulsarlas. */
+.entry-photos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.thumb { width: 84px; height: 84px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); transition: transform .2s, border-color .2s; }
+.thumb:hover, .thumb:focus-visible { transform: translateY(-2px); border-color: var(--accent); }
+.thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.app[data-theme="papel"] .thumb { border-radius: 2px; }
+.app[data-theme="tinta"] .thumb { border: 2px solid var(--ink); border-radius: 8px; }
+.entry .updated { margin-top: 12px; font-size: 11.5px; color: var(--muted); }
+.entry-actions .ibtn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* Visor ampliado. */
+.lightbox { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; padding: 28px; background: rgba(0, 0, 0, .86); }
+.lightbox img { max-width: min(96vw, 1400px); max-height: 90vh; border-radius: 10px; box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .8); }
+.lightbox .x { position: absolute; top: 18px; right: 18px; border-color: rgba(255, 255, 255, .4); background: rgba(0, 0, 0, .5); color: #fff; }
+
+/* Cuadro de confirmación. */
+.confirm-layer { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .55); }
+.confirm { width: min(380px, 100%); padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .7); }
+.confirm h3 { margin-bottom: 8px; font-size: 17px; }
+.confirm p { margin-bottom: 18px; font-size: 13.5px; color: var(--muted); }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.danger-fill { background: var(--late, #c2372f); border-color: var(--late, #c2372f); color: #fff; }
+.app[data-theme="papel"] .confirm { border-radius: 2px; }
+.app[data-theme="tinta"] .confirm { border: 2px solid var(--ink); border-radius: 12px; box-shadow: 6px 6px 0 var(--ink); }
+
+/* Miniaturas del formulario. */
+.rchip img { width: 22px; height: 22px; object-fit: cover; border-radius: 4px; }

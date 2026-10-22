@@ -1,0 +1,20 @@
+/* Tablero: ajustes de la aplicación real sobre los estilos de la maqueta. */
+
+/* Una palabra larguísima sin espacios no desborda la tarjeta. */
+.card h3 { overflow-wrap: anywhere; word-break: break-word; }
+.card .proj, .card .who-name { overflow-wrap: anywhere; }
+
+/* Los títulos largos se cortan a 3 líneas. */
+.board:not(.compact) .card h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+
+/* Menú «Mover a…» de cada tarjeta. Es `fixed` para que la lista con scroll de la columna no lo recorte. */
+.mv { position: relative; display: inline-flex; flex: 0 0 auto; }
+.mvbtn { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 15px; line-height: 1; opacity: 0; transition: opacity .2s, background .2s; }
+.card:hover .mvbtn, .card:focus-within .mvbtn, .mvbtn[aria-expanded="true"] { opacity: .8; }
+.mvbtn:hover, .mvbtn:focus-visible { opacity: 1; background: color-mix(in srgb, currentColor 14%, transparent); }
+.mvmenu { position: fixed; z-index: 40; min-width: 150px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 50px -22px rgba(0, 0, 0, .55); }
+.mvmenu button { display: block; width: 100%; padding: 8px 10px; border-radius: 8px; font-size: 13px; text-align: left; }
+.mvmenu button:hover, .mvmenu button:focus-visible { background: color-mix(in srgb, var(--accent) 14%, transparent); outline: 0; }
+.app[data-theme="papel"] .mvmenu, .app[data-theme="papel"] .mvmenu button { border-radius: 2px; }
+.app[data-theme="tinta"] .mvmenu { border: 2px solid var(--ink); border-radius: 10px; box-shadow: 4px 4px 0 var(--ink); }
+@media (hover: none) { .mvbtn { opacity: .7; } }

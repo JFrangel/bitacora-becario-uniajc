@@ -5,6 +5,7 @@
 dist-public/
 node_modules/
 publish-netlify/
+.superpowers/
 
 # Private project data and backend credentials
 *.xlsx
@@ -12,3 +13,13 @@ apps-script/
 
 # Internal reference material
 propuesta-pagina-*.png
+
+# Aplicación nueva (app/)
+app/dist/
+app/.convex/
+app/test-results/
+app/playwright-report/
+app/e2e/.seed.json
+.env*
+!.env.example
+client_secret*.json

@@ -1,0 +1,98 @@
+/* ========================================================== */
+/* B · GRAFITO — oscuro, continuo con la bitácora actual       */
+/* ========================================================== */
+.app[data-theme="grafito"] {
+  --bg: #0a0c0d; --surface: #111416; --surface2: #171c1e; --ink: #eef3f1; --muted: #93a09c; --line: #22292b; --line-strong: #34403f; --accent: #66c6a9; --accent-ink: #06231a; --warn: #e4bd71; --on-warn: #2b1d00; --late: #ff8a7a;
+  --p1: #66c6a9; --p2: #7aa7ff; --p3: #d69be3; --p4: #e4bd71; --p5: #ff8a7a; --p6: #6fd3e8;
+  --aura1: rgba(102,198,169,.11); --aura2: rgba(122,167,255,.08); --glow: rgba(102,198,169,.11); --glow-strong: rgba(102,198,169,.95);
+  --panel: rgba(255,255,255,.015); --navbg: rgba(17,20,22,.72); --shine-a: #9aa8a4; --shine-b: #ffffff;
+  --card-shadow: none; --card-shadow-hover: none; --toast-bg: #171c1e; --toast-ink: #eef3f1;
+  --font-body: "Inter", system-ui, sans-serif; --font-display: "Inter", system-ui, sans-serif; --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  background: radial-gradient(900px 420px at 12% -8%, var(--aura1), transparent 62%), radial-gradient(760px 420px at 100% 0%, var(--aura2), transparent 62%), var(--bg);
+}
+/* Grafito · tema claro */
+.app[data-theme="grafito"][data-mode="light"] {
+  --bg: #f4f6f5; --surface: #ffffff; --surface2: #eef2f0; --ink: #17201e; --muted: #5d6b67; --line: #dde4e1; --line-strong: #c3cdc9; --accent: #137a5d; --accent-ink: #ffffff; --warn: #9a6a10; --on-warn: #ffffff; --late: #c2372f;
+  --p1: #137a5d; --p2: #3563d6; --p3: #9a42b8; --p4: #a8700f; --p5: #d04b45; --p6: #14879f;
+  --aura1: rgba(19,122,93,.09); --aura2: rgba(53,99,214,.06); --glow: rgba(19,122,93,.09); --glow-strong: rgba(19,122,93,.9);
+  --panel: rgba(0,0,0,.018); --navbg: rgba(255,255,255,.8); --shine-a: #5d6b67; --shine-b: #0a0f0e;
+  --card-shadow: 0 1px 2px rgba(20,40,35,.07); --card-shadow-hover: 0 16px 30px -18px rgba(20,40,35,.38); --toast-bg: #17201e; --toast-ink: #ffffff;
+}
+[data-theme="grafito"] .nav { padding: 16px 28px; }
+[data-theme="grafito"] .mark { width: 22px; height: 22px; border-radius: 7px; background: conic-gradient(from 210deg, var(--accent), #7aa7ff, var(--accent)); box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 40%, transparent); }
+[data-theme="grafito"] .brand-text { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+[data-theme="grafito"] .brand-text em { font-style: normal; color: var(--muted); font-weight: 500; }
+[data-theme="grafito"] .tabs { padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--navbg); }
+[data-theme="grafito"] .tab { padding: 7px 16px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--muted); }
+[data-theme="grafito"] .tab:hover { color: var(--ink); }
+[data-theme="grafito"] .tab.active { color: var(--accent-ink); }
+[data-theme="grafito"] .indicator { top: 4px; height: calc(100% - 8px); border-radius: 999px; background: var(--accent); box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 35%, transparent); }
+[data-theme="grafito"] .badge { background: var(--warn); color: var(--on-warn); }
+[data-theme="grafito"] .invite { border: 1px solid var(--line); color: var(--muted); }
+[data-theme="grafito"] .invite:hover { color: var(--ink); background: var(--surface2); }
+[data-theme="grafito"] .who-text { font-size: 13px; color: var(--muted); }
+[data-theme="grafito"] [data-who="D"] { background: #7aa7ff; color: #06142e; }
+[data-theme="grafito"] [data-who="S"] { background: #d69be3; color: #2a0d33; }
+[data-theme="grafito"] [data-who="B"] { background: var(--accent); color: var(--accent-ink); }
+[data-theme="grafito"] .eyebrow { font: 500 11px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+[data-theme="grafito"] h1 { font-size: clamp(34px, 5vw, 48px); font-weight: 650; letter-spacing: -.04em; line-height: 1;
+  background: linear-gradient(110deg, var(--shine-a) 38%, var(--shine-b) 50%, var(--shine-a) 62%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 5s linear 3; }
+[data-theme="grafito"] .stat b { font-size: 30px; font-weight: 600; letter-spacing: -.03em; }
+[data-theme="grafito"] .stat span { display: block; margin-top: 6px; font: 500 10.5px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+[data-theme="grafito"] .chip { border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--surface); }
+[data-theme="grafito"] .chip:hover { color: var(--ink); border-color: var(--line-strong); }
+[data-theme="grafito"] .chip.on { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); color: var(--accent); }
+[data-theme="grafito"] .search { padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+[data-theme="grafito"] .search:focus { border-color: var(--accent); }
+[data-theme="grafito"] .col-head { padding: 0 6px; font: 500 11px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+[data-theme="grafito"] .col-num { width: 8px; height: 8px; border-radius: 50%; background: var(--c); font-size: 0; align-self: center; box-shadow: 0 0 10px var(--c); }
+[data-theme="grafito"] .col[data-col="todo"] { --c: #6b7775; } [data-theme="grafito"] .col[data-col="doing"] { --c: #7aa7ff; }
+[data-theme="grafito"] .col[data-col="review"] { --c: #d69be3; } [data-theme="grafito"] .col[data-col="done"] { --c: var(--accent); }
+[data-theme="grafito"] .col-name { font: inherit; }
+[data-theme="grafito"] .col-count { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; }
+[data-theme="grafito"] .col-body { padding: 10px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+[data-theme="grafito"] .col.over .col-body { border-color: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 14%, transparent), inset 0 0 40px color-mix(in srgb, var(--c) 8%, transparent); }
+[data-theme="grafito"] .card { border: 1px solid var(--line); border-radius: 13px; background-color: var(--surface); box-shadow: var(--card-shadow);
+  background-image: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), var(--glow), transparent 70%); }
+[data-theme="grafito"] .card::after { content: ""; position: absolute; inset: 0; padding: 1px; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(190px circle at var(--mx, 50%) var(--my, 0%), var(--glow-strong), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+[data-theme="grafito"] .card:hover { transform: translateY(-3px); box-shadow: var(--card-shadow-hover); }
+[data-theme="grafito"] .card:hover::after { opacity: 1; }
+[data-theme="grafito"] .proj { font-size: 11.5px; font-weight: 500; color: var(--muted); }
+[data-theme="grafito"] .prio { --prio: var(--accent); }
+[data-theme="grafito"] .card h3 { font-size: 14px; font-weight: 550; line-height: 1.38; letter-spacing: -.01em; }
+[data-theme="grafito"] .due { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+[data-theme="grafito"] .due.late { color: var(--late); }
+[data-theme="grafito"] .next { border: 1px solid var(--line); color: var(--muted); }
+[data-theme="grafito"] .next:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+[data-theme="grafito"] .draft { padding: 6px 10px; border: 1px solid color-mix(in srgb, var(--warn) 38%, transparent); border-radius: 9px; background: color-mix(in srgb, var(--warn) 10%, transparent); color: var(--warn); font-size: 11.5px; font-weight: 500; }
+[data-theme="grafito"] .cal-bar h2 { font-size: 30px; font-weight: 650; letter-spacing: -.035em; }
+[data-theme="grafito"] .cal-bar h2 em { font-style: normal; color: var(--muted); font-weight: 500; }
+[data-theme="grafito"] .cal-nav button { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+[data-theme="grafito"] .cal-nav button:hover { border-color: var(--accent); color: var(--accent); }
+[data-theme="grafito"] .cal-grid { gap: 6px; }
+[data-theme="grafito"] .cal-dow { font: 500 10.5px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+[data-theme="grafito"] .cal-cell { border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+[data-theme="grafito"] .cal-cell:hover:not(.blank) { border-color: var(--line-strong); transform: translateY(-2px); }
+[data-theme="grafito"] .cal-num { font-size: 12px; font-family: var(--font-mono); color: var(--muted); }
+[data-theme="grafito"] .cal-cell.today { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent), inset 0 0 30px color-mix(in srgb, var(--accent) 8%, transparent); }
+[data-theme="grafito"] .cal-cell.today .cal-num { color: var(--accent); font-weight: 600; }
+[data-theme="grafito"] .upcoming h3 { font: 500 11px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+[data-theme="grafito"] .up-item { margin-bottom: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+[data-theme="grafito"] .up-date { border-radius: 9px; background: color-mix(in srgb, var(--p) 16%, var(--surface)); color: var(--p); }
+[data-theme="grafito"] .lock { color: var(--muted); font: 500 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+[data-theme="grafito"] .entry { border: 1px solid var(--line); border-radius: 15px; background: var(--surface); }
+[data-theme="grafito"] .entry { box-shadow: var(--card-shadow); }
+[data-theme="grafito"] .entry:hover { border-color: var(--line-strong); box-shadow: var(--card-shadow-hover); }
+[data-theme="grafito"] .entry.pending { border: 1px dashed color-mix(in srgb, var(--warn) 55%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--warn) 8%, transparent), transparent 60%), var(--surface); }
+[data-theme="grafito"] .entry-top time, [data-theme="grafito"] .entry-top .hours { font-family: var(--font-mono); color: var(--muted); }
+[data-theme="grafito"] .entry h3 { font-size: 17px; font-weight: 600; letter-spacing: -.02em; }
+[data-theme="grafito"] .entry dt { font: 500 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+[data-theme="grafito"] .fill { border-radius: 10px; background: var(--warn); color: var(--on-warn); }
+[data-theme="grafito"] .fill:hover { filter: brightness(1.08); }
+[data-theme="grafito"] .hist-time { font-family: var(--font-mono); }
+[data-theme="grafito"] .hist-mark span { border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--accent); }
+[data-theme="grafito"] .hist-text i { color: var(--ink); }
+[data-theme="grafito"] .toast { background: var(--toast-bg); color: var(--toast-ink); border: 1px solid var(--line-strong); border-radius: 12px; font-size: 13px; box-shadow: 0 20px 50px -20px rgba(0,0,0,.55); }
+[data-theme="grafito"] .spark { background: var(--accent); box-shadow: 0 0 10px var(--accent); }

@@ -1,0 +1,54 @@
+{
+  "note": "Tres registros con la forma que devuelve el punto de lectura de la hoja de Google (datos de ejemplo, no reales).",
+  "entries": [
+    {
+      "id": "e-0001",
+      "recordedAt": "2026-10-14T15:03:00.000Z",
+      "date": "2026-10-14",
+      "project": "iMujer",
+      "activity": "Reunión de arranque con el equipo jurídico",
+      "objective": "Acordar el alcance de la primera entrega",
+      "result": "Alcance aprobado y cronograma definido",
+      "hours": 2.5,
+      "status": "Completada",
+      "links": [{ "label": "Acta", "url": "https://docs.google.com/document/d/ejemplo" }],
+      "photos": [{ "name": "pizarra.jpg", "url": "https://drive.google.com/uc?id=AAA111" }],
+      "nextStep": "Redactar el borrador del convenio",
+      "blocker": "Falta confirmar la fecha con la dirección",
+      "order": 1,
+      "createdAt": 1760454180000,
+      "updatedAt": 1760454180000
+    },
+    {
+      "id": "e-0002",
+      "recordedAt": "2026-10-15T14:00:00.000Z",
+      "date": "2026-10-15",
+      "project": "Portal de análisis jurídico   y seguimiento   de procesos de contratación pública (SECOP II) 2026",
+      "activity": "Revisión de cláusulas",
+      "objective": "Detectar riesgos en las cláusulas de pago",
+      "result": "Seis cláusulas marcadas para ajuste",
+      "hours": 4,
+      "status": "En progreso",
+      "links": "[{\"label\":\"\",\"url\":\"https://example.com/clausulas\"}]",
+      "photos": "[]",
+      "nextStep": "",
+      "blocker": "",
+      "order": 1
+    },
+    {
+      "id": "e-0003",
+      "recordedAt": "2026-10-15T20:30:00.000Z",
+      "date": "2026-10-15",
+      "project": "imujer",
+      "activity": "Informe semanal",
+      "result": "Informe enviado",
+      "hours": 1,
+      "status": "Completada",
+      "links": [],
+      "photos": [],
+      "nextStep": "Preparar el informe del mes",
+      "blocker": "",
+      "order": 2
+    }
+  ]
+}
