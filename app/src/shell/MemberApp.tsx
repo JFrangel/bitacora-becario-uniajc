@@ -79,6 +79,8 @@ function MemberShell({ me, workspaceChoices, activeWorkspace }: { me: Active; wo
   );
 }
 
+const UNKNOWN_SPACE_GRACE_MS = 3000;
+
 /** La aplicación de una persona con acceso vigente (la dueña o una persona invitada). */
 export function MemberApp({ me }: { me: Active }) {
   const touch = useMutation(api.members.touch);
@@ -96,9 +98,12 @@ export function MemberApp({ me }: { me: Active }) {
     void touch({}).catch(() => {});
   }, [touch]);
 
+  // Un espacio recién creado tarda un instante en llegar a la lista: se le da margen antes de devolver a la persona al de siempre
+  // (si no, la creación "no hace nada" porque la ruta nueva se descarta antes de que el espacio aparezca).
   useEffect(() => {
     if (workspaces === undefined || route.name !== 'workspace' || requested) return;
-    navigate(hrefForWorkspace('board', activeWorkspace?.id, activeWorkspace?.isInitial));
+    const timer = setTimeout(() => navigate(hrefForWorkspace('board', activeWorkspace?.id, activeWorkspace?.isInitial)), UNKNOWN_SPACE_GRACE_MS);
+    return () => clearTimeout(timer);
   }, [workspaces, route.name, requested, activeWorkspace]);
 
   const wanted = route.name === 'workspace' ? (route.view ?? 'board') : route.name;

@@ -2,7 +2,7 @@
 // sembrados con esas mismas funciones (así el historial, los borradores y las horas salen como saldrían de verdad).
 import { convexTest } from 'convex-test';
 import { makeFunctionReference } from 'convex/server';
-import { api } from '../convex/_generated/api';
+import { api, internal } from '../convex/_generated/api';
 import type { Id } from '../convex/_generated/dataModel';
 import schema from '../convex/schema';
 
@@ -123,6 +123,12 @@ async function seed(t: ReturnType<typeof convexTest>) {
 export async function createBackend() {
   const t = convexTest(schema, modules);
   const world = await seed(t);
+  // Igual que producción tras `migrate-workspaces --apply`: todo queda dentro de «Bitácora principal».
+  let cursor: string | undefined;
+  do {
+    const batch = (await t.mutation(internal.workspaceMigration.runBatch, { cursor, limit: 100 })) as { cursor?: string | null };
+    cursor = batch.cursor ?? undefined;
+  } while (cursor !== undefined);
   let version = 1;
 
   const clientFor = (who: string): Client => {

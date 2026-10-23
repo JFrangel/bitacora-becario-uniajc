@@ -35,6 +35,7 @@ function draw(me: ActiveMe = owner) {
 beforeEach(() => {
   fake.reset();
   window.location.hash = '';
+  window.history.replaceState({}, '', '/');
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 0));
   fake.setQuery('tasks:list', [
     task({ id: 't1', title: 'Revisar convenio', dueDate: '2026-10-24', assigneeId: 'm1', assigneeName: 'Jose Padilla' }),
@@ -105,6 +106,94 @@ describe('MemberApp · board', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Crear Bitácora' }));
     await waitFor(() => expect(window.location.pathname).toBe('/espacio/workspaces%3Anew'));
     expect(fake.called('workspaces:create')[0].args).toEqual({ name: 'AthenIA personal' });
+  });
+
+  it('stays on the new Bitácora even when the list reaches the app a moment after the mutation answers', async () => {
+    const initial = { id: 'workspaces:initial', name: 'Mi Bitácora', role: 'owner', ownerName: 'Jose', updatedAt: 2, isInitial: true };
+    fake.setQuery('workspaces:listMine', { items: [initial], workspaceMode: true });
+    fake.onMutation('workspaces:create', async ({ name }) => {
+      setTimeout(() => fake.setQuery('workspaces:listMine', { items: [initial, { id: 'workspaces:late', name, role: 'owner', ownerName: 'Jose', updatedAt: 3, isInitial: false }], workspaceMode: true }), 300);
+      return 'workspaces:late';
+    });
+    const user = userEvent.setup();
+    draw();
+    await user.click(await screen.findByRole('button', { name: 'Crear Bitácora' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Nueva Bitácora' });
+    await user.type(within(dialog).getByLabelText('Nombre'), 'Proyecto nuevo');
+    await user.click(within(dialog).getByRole('button', { name: 'Crear Bitácora' }));
+    await waitFor(() => expect((screen.getByLabelText('Cambiar de Bitácora') as HTMLSelectElement).value).toBe('workspaces:late'), { timeout: 2000 });
+    expect(window.location.pathname).toBe('/espacio/workspaces%3Alate');
+  });
+
+  describe('managing a Bitácora', () => {
+    const initial = { id: 'workspaces:initial', name: 'Bitácora principal', role: 'owner', ownerName: 'Jose', updatedAt: 3, isInitial: true };
+    const mine = { id: 'workspaces:mine', name: 'Proyecto A', role: 'owner', ownerName: 'Jose', updatedAt: 2, isInitial: false };
+    const shared = { id: 'workspaces:shared', name: 'AthenIA', role: 'editor', ownerName: 'Ana', updatedAt: 1, isInitial: false };
+
+    it('renames the active Bitácora from its management panel', async () => {
+      fake.setQuery('workspaces:listMine', { items: [initial, mine], workspaceMode: true });
+      fake.onMutation('workspaces:rename', async () => undefined);
+      const user = userEvent.setup();
+      window.history.replaceState({}, '', '/espacio/workspaces%3Amine');
+      draw();
+      await user.click(await screen.findByRole('button', { name: 'Editar Bitácora' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Editar Bitácora' });
+      const field = within(dialog).getByLabelText('Nombre') as HTMLInputElement;
+      expect(field.value).toBe('Proyecto A');
+      await user.clear(field);
+      await user.type(field, 'Investigación');
+      await user.click(within(dialog).getByRole('button', { name: 'Guardar nombre' }));
+      await waitFor(() => expect(fake.called('workspaces:rename')).toHaveLength(1));
+      expect(fake.called('workspaces:rename')[0].args).toEqual({ workspaceId: 'workspaces:mine', name: 'Investigación' });
+    });
+
+    it('asks for confirmation before deleting and goes back to the original Bitácora afterwards', async () => {
+      fake.setQuery('workspaces:listMine', { items: [initial, mine], workspaceMode: true });
+      fake.onMutation('workspaces:remove', async () => undefined);
+      const user = userEvent.setup();
+      window.history.replaceState({}, '', '/espacio/workspaces%3Amine');
+      draw();
+      await user.click(await screen.findByRole('button', { name: 'Editar Bitácora' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Editar Bitácora' });
+      await user.click(within(dialog).getByRole('button', { name: 'Eliminar Bitácora' }));
+      expect(fake.called('workspaces:remove')).toHaveLength(0);
+      const confirm = await screen.findByRole('alertdialog');
+      expect(confirm.textContent).toContain('Proyecto A');
+      await user.click(within(confirm).getByRole('button', { name: 'Cancelar' }));
+      expect(fake.called('workspaces:remove')).toHaveLength(0);
+      await user.click(within(dialog).getByRole('button', { name: 'Eliminar Bitácora' }));
+      await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Eliminar para siempre' }));
+      await waitFor(() => expect(fake.called('workspaces:remove')).toHaveLength(1));
+      expect(fake.called('workspaces:remove')[0].args).toEqual({ workspaceId: 'workspaces:mine' });
+      await waitFor(() => expect(window.location.pathname).toBe('/'));
+    });
+
+    it('does not offer to delete the original Bitácora, and hides the editor for shared spaces', async () => {
+      fake.setQuery('workspaces:listMine', { items: [initial, shared], workspaceMode: true });
+      const user = userEvent.setup();
+      draw();
+      await user.click(await screen.findByRole('button', { name: 'Editar Bitácora' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Editar Bitácora' });
+      expect(within(dialog).queryByRole('button', { name: 'Eliminar Bitácora' })).toBeNull();
+      expect(within(dialog).getByText('La Bitácora principal no se puede eliminar.')).toBeTruthy();
+      await user.keyboard('{Escape}');
+      await user.selectOptions(screen.getByLabelText('Cambiar de Bitácora'), 'workspaces:shared');
+      await waitFor(() => expect(screen.queryByRole('button', { name: 'Editar Bitácora' })).toBeNull());
+    });
+
+    it('shows the server message when the Bitácora still has content', async () => {
+      fake.setQuery('workspaces:listMine', { items: [initial, mine], workspaceMode: true });
+      fake.onMutation('workspaces:remove', async () => { throw Object.assign(new Error('x'), { data: { code: 'VALIDATION', message: 'Esta Bitácora todavía tiene tareas o registros.' } }); });
+      const user = userEvent.setup();
+      window.history.replaceState({}, '', '/espacio/workspaces%3Amine');
+      draw();
+      await user.click(await screen.findByRole('button', { name: 'Editar Bitácora' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Editar Bitácora' });
+      await user.click(within(dialog).getByRole('button', { name: 'Eliminar Bitácora' }));
+      await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Eliminar para siempre' }));
+      expect(await within(dialog).findByText(/todavía tiene tareas o registros/)).toBeTruthy();
+      expect(window.location.pathname).toBe('/espacio/workspaces%3Amine');
+    });
   });
 
   it('offers a new personal Bitácora when the last shared space is revoked', async () => {

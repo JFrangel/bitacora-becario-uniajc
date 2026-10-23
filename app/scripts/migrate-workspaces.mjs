@@ -24,7 +24,7 @@ function convexRun(name, payload = {}) {
   return JSON.parse(output.slice(start >= 0 ? start : 0));
 }
 
-const initial = convexRun('workspaceMigration:statusAction', { secret });
+const initial = convexRun('workspaceMigrationAdmin:statusAction', { secret });
 console.log(apply ? 'Aplicando backfill en el despliegue seleccionado.' : 'Comprobación en seco; no se modificó Convex.');
 console.log(JSON.stringify(initial, null, 2));
 if (!apply) process.exit(0);
@@ -32,13 +32,13 @@ if (!apply) process.exit(0);
 let cursor;
 let batches = 0;
 do {
-  const result = convexRun('workspaceMigration:runBatchAction', { secret, ...(cursor ? { cursor } : {}), limit: 100 });
+  const result = convexRun('workspaceMigrationAdmin:runBatchAction', { secret, ...(cursor ? { cursor } : {}), limit: 100 });
   cursor = result.cursor ?? undefined;
   batches += 1;
   console.log(`Lote ${batches}: ${result.processed} documentos procesados.`);
 } while (cursor !== undefined);
 
-const final = convexRun('workspaceMigration:statusAction', { secret });
+const final = convexRun('workspaceMigrationAdmin:statusAction', { secret });
 console.log('Estado después del backfill:');
 console.log(JSON.stringify(final, null, 2));
 if (final.inconsistentReferences !== 0 || Object.values(final.unassigned).some((count) => count !== 0)) {
