@@ -45,6 +45,7 @@ export const seed = internalMutation({
     const shareToken = newToken();
     await ctx.db.insert('settings', { shareEnabled: true, shareToken, shareIncludesJournal: true, shareShowsDescriptions: false, timezone: 'America/Bogota' });
     await ctx.db.insert('profile', {
+      memberId: ownerId,
       program: 'Ingeniería de Sistemas',
       term: '10.º semestre',
       institution: 'Institución Universitaria Antonio José Camacho',

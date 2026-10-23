@@ -55,6 +55,29 @@ describe('Root · without a session', () => {
   });
 });
 
+describe('Root · public personal profile', () => {
+  it('renders only the profile data from its own public link without opening a session', () => {
+    window.location.hash = '#/perfil/token-personal';
+    fake.setQuery('viewer:sharedProfile', {
+      name: 'Ana Gómez', roleLabel: 'Directora', group: 'AthenIA', institution: 'UNIAJC',
+    });
+    draw();
+    expect(screen.getByRole('heading', { name: 'Ana Gómez' })).toBeTruthy();
+    expect(screen.getByText('Directora')).toBeTruthy();
+    expect(screen.getByText('AthenIA')).toBeTruthy();
+    expect(screen.queryByRole('navigation')).toBeNull();
+    expect(fake.asked.find((query) => query.name === 'viewer:sharedProfile')?.args).toEqual({ token: 'token-personal' });
+    expect(fake.asked.some((query) => query.name === 'session:me')).toBe(false);
+  });
+
+  it('shows a neutral unavailable state for an inactive link', () => {
+    window.location.hash = '#/perfil/revoked';
+    fake.setQuery('viewer:sharedProfile', null);
+    draw();
+    expect(screen.getByRole('heading', { name: 'Este perfil ya no está disponible' })).toBeTruthy();
+  });
+});
+
 describe('Root · signed in with Google', () => {
   beforeEach(() => fake.setAuth({ isAuthenticated: true }));
 
@@ -90,6 +113,7 @@ describe('Root · signed in with Google', () => {
     const nav = await screen.findByRole('navigation', { name: 'Secciones' });
     expect(nav.textContent).toContain('Tablero');
     expect(nav.textContent).not.toContain('Bitácora');
+    expect(document.querySelector('.app')!.getAttribute('data-mode')).toBe('light');
     expect(screen.getByRole('button', { name: 'Invitar' })).toBeTruthy();
     await waitFor(() => expect(fake.called('members:touch')).toHaveLength(1));
   });
@@ -141,6 +165,7 @@ describe('Root · invitation', () => {
     fake.setQuery('invites:peek', { valid: true });
     draw();
     expect(await screen.findByRole('heading', { name: /Te invitaron/ })).toBeTruthy();
+    expect(document.querySelector('.app')!.getAttribute('data-mode')).toBe('light');
     await userEvent.setup().click(screen.getByRole('button', { name: 'Continuar con Google' }));
     expect(fake.signIn).toHaveBeenCalledWith('google', { redirectTo: expect.stringContaining('#/invitacion/tok123') });
   });

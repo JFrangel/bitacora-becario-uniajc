@@ -117,6 +117,16 @@ describe('ProfilePanel · the owner', () => {
     expect(document.querySelector('.toast')!.textContent).toBe('Perfil actualizado.');
   });
 
+  it('keeps the badge visible and explains when the new sharing query is not deployed yet', async () => {
+    fake.setQuery('profile:shareSettings', () => {
+      throw new Error('Could not find public function profile:shareSettings');
+    });
+    draw('member');
+    const panel = await open();
+    expect(await within(panel).findByAltText('Carné de Jose Frangel Padilla Camacho')).toBeTruthy();
+    expect(within(panel).getByText(/falta sincronizar las funciones de compartir con Convex/)).toBeTruthy();
+  });
+
   it('«Acceso» and «Cerrar sesión» call what the shell gave it', async () => {
     const user = userEvent.setup();
     const onAccess = vi.fn();

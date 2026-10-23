@@ -143,8 +143,11 @@ describe('read-only link · what it shows', () => {
     const tabs = within(screen.getByRole('navigation', { name: 'Secciones' }));
     expect(['Tablero', 'Calendario', /^Bitácora/, 'Historial'].map((name) => tabs.getByRole('button', { name }).textContent)).toHaveLength(4);
     expect(document.querySelector('.who-text')!.textContent).toBe('Solo lectura');
+    expect(await screen.findByText('De Jose Frangel Padilla Camacho')).toBeTruthy();
+    expect(document.querySelector('.brand-text')!.textContent).toBe('Bitácora');
     expect(screen.getByRole('button', { name: 'Ver el perfil de quien registra' })).toBeTruthy();
     expect(document.querySelector('.app')!.getAttribute('data-readonly')).toBe('true');
+    expect(document.querySelector('.app')!.getAttribute('data-mode')).toBe('light');
   });
 
   it('shows the board with the hours and the drafts of the Bitácora, and the drafts in the tab badge', async () => {

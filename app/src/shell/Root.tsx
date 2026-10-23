@@ -7,6 +7,7 @@ import { useStuck } from '../lib/useConnectivity';
 import { navigate, useRoute } from '../router';
 import type { Route } from '../router';
 import { ViewerApp } from '../viewer/ViewerApp';
+import { SharedProfileApp } from '../viewer/SharedProfileApp';
 import { Gate } from './Gate';
 import type { GateState } from './Gate';
 import { MemberApp } from './MemberApp';
@@ -18,6 +19,7 @@ type RootProps = { reload?: () => void };
 export function Root({ reload = () => window.location.reload() }: RootProps) {
   const route = useRoute();
   if (route.name === 'viewer') return <ViewerApp token={route.token!} />;
+  if (route.name === 'profileShare') return <SharedProfileApp token={route.token!} />;
   return <MemberRoot route={route} reload={reload} />;
 }
 

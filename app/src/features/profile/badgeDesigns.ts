@@ -31,6 +31,10 @@ export type DrawEnv = {
   rgba: (hex: string, alpha: number) => string;
   photo: CanvasImageSource | null;
   group: string;
+  frontDescription: string;
+  backTitle: string;
+  backDescription: string;
+  backFooter: string;
   logoOn: boolean;
   name: string;
   role: string;
@@ -43,9 +47,10 @@ export type DrawEnv = {
   detail: string;
   markBack: Canvas | null;
   label: (c: Ctx2D, text: string, x: number, y: number, color?: string, size?: number, spacing?: number) => void;
+  fitLabel: (c: Ctx2D, text: string, x: number, y: number, color: string, size: number, maxWidth: number, spacing?: number) => void;
   fit: (c: Ctx2D, text: string, weight: number, size: number, maxWidth: number, min?: number, family?: string, style?: string) => void;
   wrap: (c: Ctx2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) => number;
-  wordmark: (c: Ctx2D, x: number, y: number, size: number, base: string, accent: string, family?: string, weight?: number, left?: boolean) => number;
+  wordmark: (c: Ctx2D, x: number, y: number, size: number, base: string, accent: string, family?: string, weight?: number, left?: boolean, text?: string) => number;
   tint: (color: string, width: number) => Promise<Canvas | null>;
 };
 
@@ -187,7 +192,7 @@ export const DESIGNS: Record<BadgeDesignId, Design> = {
       f.fillRect(x0 + lw + ww + 12, 330 - size * 0.74, cur, size * 0.78);
       f.font = `500 26px ${CODE}`;
       f.textAlign = 'center';
-      put(f, '// grupo de investigación en IA', CX, 392, muted);
+      if (e.frontDescription) put(f, `// ${e.frontDescription}`, CX, 392, muted);
 
       /* retrato en un cuadrado redondeado con un contorno fino (sin líneas de circuito) */
       const PS = 400;
@@ -309,35 +314,19 @@ export const DESIGNS: Record<BadgeDesignId, Design> = {
           }
         }
         b.drawImage(e.markBack, (W - e.markBack.width) / 2, 330);
-        b.font = `800 120px ${CODE}`;
-        b.textAlign = 'left';
-        const bw = b.measureText(word).width;
-        const bx = (W - (bw + 12 + 50)) / 2;
-        wordmark(b, bx, 900, 120, '#ffffff', '#8fbaff', CODE, 800, true);
-        b.fillStyle = '#8fbaff';
-        b.fillRect(bx + bw + 12, 900 - 120 * 0.74, 50, 120 * 0.78);
-        b.font = `500 28px ${CODE}`;
+        const title = e.backTitle;
         b.textAlign = 'center';
-        put(b, '// grupo de investigación en', CX, 980, 'rgba(255,255,255,.75)');
-        put(b, '// inteligencia artificial', CX, 1024, 'rgba(255,255,255,.75)');
+        b.fillStyle = '#ffffff';
+        fit(b, title, 800, 120, W - M * 2, 18, CODE);
+        b.fillText(title, CX, 900);
+        e.fitLabel(b, `// ${e.backDescription}`, CX, 1000, 'rgba(255,255,255,.75)', 28, W - M * 2, 0);
         b.font = `600 34px ${CODE}`;
         b.textAlign = 'left';
-        const exp = ['export ', 'default ', word, ';'];
-        const ew = exp.reduce((a, t) => a + b.measureText(t).width, 0);
-        let ex = (W - ew) / 2;
-        (
-          [
-            ['export ', '#8fbaff'],
-            ['default ', '#8fbaff'],
-            [word, '#ffffff'],
-            [';', 'rgba(255,255,255,.6)'],
-          ] as Array<[string, string]>
-        ).forEach(([t, color]) => {
-          ex += put(b, t, ex, 1330, color);
-        });
-        b.font = `500 24px ${CODE}`;
+        fit(b, `export default ${title};`, 600, 34, W - M * 2, 15, CODE);
         b.textAlign = 'center';
-        put(b, '// UNIAJC · CALI', CX, 1392, 'rgba(255,255,255,.55)');
+        b.fillStyle = '#ffffff';
+        b.fillText(`export default ${title};`, CX, 1330);
+        e.fitLabel(b, `// ${e.backFooter}`, CX, 1392, 'rgba(255,255,255,.55)', 24, W - M * 2, 0);
       } else {
         b.fillStyle = e.accent;
         b.fillRect(0, 0, W, H);
@@ -477,10 +466,12 @@ export const DESIGNS: Record<BadgeDesignId, Design> = {
         if (m2) b.drawImage(m2, (W - m2.width) / 2, 330);
       }
       b.textAlign = 'center';
-      wordmark(b, W / 2, 860, 130, '#ffffff', '#6aa5ff', SANS, 700);
+      b.fillStyle = '#ffffff';
+      fit(b, e.backTitle, 700, 130, W - M * 2, 20, SANS);
+      b.fillText(e.backTitle, W / 2, 860);
       b.textAlign = 'center';
-      label(b, '> grupo_investigacion: IA', W / 2, 960, 'rgba(255,255,255,.75)', 28, 1);
-      label(b, '> institucion: UNIAJC · CALI', W / 2, 1010, 'rgba(255,255,255,.75)', 28, 1);
+      e.fitLabel(b, `> ${e.backDescription}`, W / 2, 960, 'rgba(255,255,255,.75)', 28, W - M * 2, 1);
+      e.fitLabel(b, `> ${e.backFooter}`, W / 2, 1010, 'rgba(255,255,255,.75)', 28, W - M * 2, 1);
       barcode(b, M, 1250, W - M * 2, 64, 'rgba(255,255,255,.8)', 9);
       s.fillStyle = '#050d1c';
       s.fillRect(0, 0, 1024, 96);
@@ -597,11 +588,12 @@ export const DESIGNS: Record<BadgeDesignId, Design> = {
       b.textAlign = 'center';
       b.fillStyle = '#0b2f73';
       b.font = '300px Anton';
-      b.fillText('ATHENIA', W / 2, 960);
-      label(b, 'GRUPO DE INVESTIGACIÓN EN IA', W / 2, 1040, '#0b2f73', 28, 4);
+      fit(b, e.backTitle, 400, 300, W - M * 2, 18, 'Anton');
+      b.fillText(e.backTitle, W / 2, 960);
+      e.fitLabel(b, e.backDescription, W / 2, 1040, '#0b2f73', 28, W - M * 2, 2);
       b.fillStyle = '#1553c9';
       b.fillRect(0, H - 90, W, 90);
-      label(b, 'UNIAJC · CALI', W / 2, H - 36, '#ffffff', 28, 6);
+      e.fitLabel(b, e.backFooter, W / 2, H - 36, '#ffffff', 28, W - M * 2, 2);
       s.fillStyle = '#0a2a6b';
       s.fillRect(0, 0, 1024, 96);
       s.fillStyle = '#ffffff';
@@ -704,12 +696,14 @@ export const DESIGNS: Record<BadgeDesignId, Design> = {
         if (m2) b.drawImage(m2, (W - m2.width) / 2, 420);
       }
       b.textAlign = 'center';
-      wordmark(b, CX, 900, 96, ink, brand, INTER, 700);
+      b.fillStyle = ink;
+      fit(b, e.backTitle, 700, 96, W - M * 2, 20, INTER);
+      b.fillText(e.backTitle, CX, 900);
       b.textAlign = 'center';
-      label(b, 'GRUPO DE INVESTIGACIÓN EN IA', CX, 960, muted, 24, 3);
+      e.fitLabel(b, e.backDescription, CX, 960, muted, 24, W - M * 2, 1);
       b.fillStyle = hair;
       b.fillRect(M, 1300, W - M * 2, 2);
-      label(b, 'UNIAJC · CALI', CX, 1356, muted, 24, 4);
+      e.fitLabel(b, e.backFooter, CX, 1356, muted, 24, W - M * 2, 1);
       s.fillStyle = ink;
       s.fillRect(0, 0, 1024, 96);
       s.fillStyle = bg;
@@ -787,7 +781,7 @@ export const DESIGNS: Record<BadgeDesignId, Design> = {
         label(f, 'GRUPO', M, 1284, muted, 26, 3);
         f.fillStyle = ink;
         f.font = `500 38px ${body}`;
-        f.fillText(`${group} · grupo de investigación en IA`, M, 1334);
+        f.fillText(e.frontDescription ? `${group} · ${e.frontDescription}` : group, M, 1334);
       }
 
       /* reverso: color de acento con el logotipo y el nombre de AthenIA */
@@ -799,10 +793,10 @@ export const DESIGNS: Record<BadgeDesignId, Design> = {
       }
       b.fillStyle = onAccent;
       b.textAlign = 'center';
-      fit(b, group || 'AthenIA', 700, 150, W - M * 2, 60, body);
-      b.fillText(group || 'AthenIA', CX, 900);
-      label(b, 'GRUPO DE INVESTIGACIÓN EN IA', CX, 972, onAccent, 30, 3);
-      label(b, 'UNIAJC · CALI', CX, 1340, onAccent, 28, 6);
+      fit(b, e.backTitle, 700, 150, W - M * 2, 18, body);
+      b.fillText(e.backTitle, CX, 900);
+      e.fitLabel(b, e.backDescription, CX, 972, onAccent, 30, W - M * 2, 1);
+      e.fitLabel(b, e.backFooter, CX, 1340, onAccent, 28, W - M * 2, 2);
       s.fillStyle = '#0e0e0e';
       s.fillRect(0, 0, 1024, 96);
       s.fillStyle = accent;

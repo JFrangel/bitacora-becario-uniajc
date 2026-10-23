@@ -76,6 +76,7 @@ describe('invites.redeem', () => {
 
     const member = await t.run((ctx) => ctx.db.get(memberId));
     expect(member).toMatchObject({ name: 'Laura Gómez', roleLabel: 'Directora', isOwner: false, userId: laura.userId, email: 'laura@example.com', invitedBy: owner.memberId });
+    expect(await t.run((ctx) => ctx.db.query('profile').withIndex('by_memberId', (q) => q.eq('memberId', memberId)).unique())).toMatchObject({ memberId });
     const invite = (await t.run((ctx) => ctx.db.query('invites').collect()))[0];
     expect(invite.usedBy).toBe(memberId);
     expect(invite.usedAt).toBeTypeOf('number');

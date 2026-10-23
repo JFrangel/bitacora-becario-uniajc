@@ -7,6 +7,7 @@ import { fail } from './lib/errors';
 import { pageEvents } from './lib/eventPages';
 import { journalSummary, listJournal } from './lib/journalQueries';
 import { ownerBadge } from './lib/profile';
+import { sha256Hex } from './lib/tokens';
 import { listProjects } from './lib/projects';
 import { listTasks } from './lib/taskQueries';
 import { activityStatus } from './lib/validators';
@@ -62,6 +63,35 @@ export const profile = query({
   handler: async (ctx, { shareToken }) => {
     await requireViewer(ctx, shareToken);
     return ownerBadge(ctx);
+  },
+});
+
+/** Perfil individual compartido: solo identidad y campos públicos explícitamente habilitados. */
+export const sharedProfile = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const hash = await sha256Hex(token);
+    const profile = await ctx.db.query('profile').withIndex('by_shareTokenHash', (q) => q.eq('shareTokenHash', hash)).unique();
+    if (!profile || profile.shareEnabled !== true || !profile.memberId) return null;
+    const member = await ctx.db.get(profile.memberId);
+    if (!member || member.revokedAt !== undefined) return null;
+    const result: {
+      name: string;
+      roleLabel: string;
+      institution?: string;
+      group?: string;
+      program?: string;
+      term?: string;
+      photoDataUrl?: string;
+    } = { name: member.name, roleLabel: member.roleLabel };
+    if (profile.institution) result.institution = profile.institution;
+    if (profile.group) result.group = profile.group;
+    if (profile.shareAcademic === true) {
+      if (profile.program) result.program = profile.program;
+      if (profile.term) result.term = profile.term;
+    }
+    if (profile.sharePhoto === true && profile.photoDataUrl) result.photoDataUrl = profile.photoDataUrl;
+    return result;
   },
 });
 

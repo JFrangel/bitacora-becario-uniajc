@@ -13,5 +13,6 @@ export const LIMITS = {
   nameMin: 2,
   nameMax: 60,
   photoBytes: 409600,
+  badgeLogoBytes: 184320,
   eventsPage: 50,
 } as const;

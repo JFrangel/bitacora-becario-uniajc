@@ -106,10 +106,19 @@ export function readPalette(dark: boolean): Palette {
 let logoPromise: Promise<HTMLImageElement | null> | null = null;
 const loadLogo = () => (logoPromise ??= loadImage(logoUrl));
 
-const photoKey = (data: BadgeData) => `${data.photoDataUrl?.length ?? 0}:${data.photoDataUrl?.slice(-24) ?? ''}`;
+const photoKey = (value: string | undefined) => {
+  if (!value) return '';
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) hash = Math.imul(hash ^ value.charCodeAt(index), 16777619);
+  return `${value.length}:${hash >>> 0}`;
+};
 
 /** Lo que, al cambiar, obliga a dibujar de nuevo el carné. */
-export const dataKeyOf = (data: BadgeData) => JSON.stringify([data.name, data.roleLabel, data.program, data.term, data.institution, data.group, photoKey(data), data.updatedAt]);
+export const dataKeyOf = (data: BadgeData) => JSON.stringify([
+  data.name, data.roleLabel, data.program, data.term, data.institution, data.group, data.frontDescription,
+  data.backTitle, data.backDescription, data.backFooter,
+  photoKey(data.photoDataUrl), photoKey(data.groupLogoDataUrl), data.updatedAt,
+]);
 
 type Theme = { style: string; mode: string };
 
@@ -117,8 +126,12 @@ type Theme = { style: string; mode: string };
 export function facesFor(data: BadgeData, design: BadgeDesignId, scale: number, theme: Theme): Promise<Faces> {
   return cachedFaces(faceKey(design, scale, theme.style, theme.mode, data.updatedAt, dataKeyOf(data)), async () => {
     await loadBadgeFonts();
-    const [photo, logoMask] = await Promise.all([data.photoDataUrl ? loadImage(data.photoDataUrl) : Promise.resolve(null), loadLogo()]);
-    return drawBadgeFaces({ design, data, palette: readPalette(theme.mode === 'dark'), photo, logoMask, scale });
+    const [photo, logoMask, groupLogo] = await Promise.all([
+      data.photoDataUrl ? loadImage(data.photoDataUrl) : Promise.resolve(null),
+      loadLogo(),
+      data.groupLogoDataUrl ? loadImage(data.groupLogoDataUrl) : Promise.resolve(null),
+    ]);
+    return drawBadgeFaces({ design, data, palette: readPalette(theme.mode === 'dark'), photo, logoMask, groupLogo, scale });
   });
 }
 

@@ -43,7 +43,7 @@ export async function setupOwner(t: Test, email = 'dueña@example.com') {
     if (!(await ctx.db.query('settings').first())) {
       await ctx.db.insert('settings', { shareEnabled: false, shareIncludesJournal: true, shareShowsDescriptions: false, timezone: 'America/Bogota' });
     }
-    if (!(await ctx.db.query('profile').first())) await ctx.db.insert('profile', { updatedAt: Date.now() });
+    if (!(await ctx.db.query('profile').first())) await ctx.db.insert('profile', { memberId, updatedAt: Date.now() });
   });
   return { ...user, memberId };
 }

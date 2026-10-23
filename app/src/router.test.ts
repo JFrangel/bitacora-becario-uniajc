@@ -20,6 +20,10 @@ describe('parseRoute', () => {
     expect(parseRoute('#/invitacion/A-b_9')).toEqual({ name: 'invite', token: 'A-b_9' });
   });
 
+  it('reads an individual profile share token separately from the board share', () => {
+    expect(parseRoute('#/perfil/A-b_9')).toEqual({ name: 'profileShare', token: 'A-b_9' });
+  });
+
   it('reads the read-only token and the section inside the read-only view', () => {
     expect(parseRoute('#/ver/xyz')).toEqual({ name: 'viewer', token: 'xyz' });
     expect(parseRoute('#/ver/xyz/calendario')).toEqual({ name: 'viewer', token: 'xyz', view: 'calendar' });

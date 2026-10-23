@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 export type Tab = 'board' | 'calendar' | 'journal' | 'history';
-export type Route = { name: Tab | 'invite' | 'viewer'; token?: string; view?: Tab };
+export type Route = { name: Tab | 'invite' | 'viewer' | 'profileShare'; token?: string; view?: Tab };
 
 export const TABS: ReadonlyArray<{ id: Tab; label: string; path: string }> = [
   { id: 'board', label: 'Tablero', path: '' },
@@ -23,7 +23,7 @@ const safeDecode = (part: string) => {
   }
 };
 
-/** `#/` tablero · `#/calendario` · `#/bitacora` · `#/historial` · `#/invitacion/<token>` · `#/ver/<token>[/<sección>]`. */
+/** `#/` tablero · `#/calendario` · `#/bitacora` · `#/historial` · `#/invitacion/<token>` · `#/ver/<token>[/<sección>]` · `#/perfil/<token>`. */
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(safeDecode);
   const [first, second, third] = parts;
@@ -32,6 +32,7 @@ export function parseRoute(hash: string): Route {
     const view = tabOf(third);
     return view ? { name: 'viewer', token: second, view } : { name: 'viewer', token: second };
   }
+  if (first === 'perfil' && second) return { name: 'profileShare', token: second };
   const tab = tabOf(first);
   if (tab) return { name: tab };
   return { name: 'board' };

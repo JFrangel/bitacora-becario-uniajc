@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { BadgeData } from '../../../convex/lib/profile';
 import { useSession } from '../../audience';
 import { errorMessage } from '../../convexClient';
@@ -8,11 +9,32 @@ import type { BadgeDesignId } from './badgeDesigns';
 import { DesignGallery } from './DesignGallery';
 import { IdBadge, useBadge3D } from './IdBadge';
 import { ProfileForm } from './ProfileForm';
+import { ProfileShareControls } from './ProfileShareControls';
 import { useProfileUi } from './ProfileUi';
 import { useBadgeData, useBadgeDesign } from './useBadge';
 
 const SINCE = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Bogota' });
 const joinDot = (...parts: Array<string | undefined>) => parts.filter(Boolean).join(' · ');
+
+class ProfileShareBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <section className="profile-share" aria-labelledby="profileShareUnavailableTitle">
+          <h3 id="profileShareUnavailableTitle">Compartir mi perfil</h3>
+          <p className="ev-hint">El carné está disponible, pero falta sincronizar las funciones de compartir con Convex. Cuando el servicio esté actualizado, podrás crear el enlace desde aquí.</p>
+        </section>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const factsOf = (data: BadgeData): Array<[string, string]> => {
   const rows: Array<[string, string]> = [
@@ -46,7 +68,7 @@ function ProfileBody({ data, design, mode, readOnly, isOwner, onMode, onAccess, 
     return () => setBodyMounted(false);
   }, [setBodyMounted]);
 
-  if (mode === 'edit') return <ProfileForm data={data} isOwner={isOwner} onDone={() => onMode('view')} onCancel={() => onMode('view')} />;
+  if (mode === 'edit') return <ProfileForm data={data} onDone={() => onMode('view')} onCancel={() => onMode('view')} />;
 
   return (
     <div id="profileView">
@@ -84,6 +106,11 @@ function ProfileBody({ data, design, mode, readOnly, isOwner, onMode, onAccess, 
           </button>
         )}
       </div>
+      {!readOnly && (
+        <ProfileShareBoundary>
+          <ProfileShareControls />
+        </ProfileShareBoundary>
+      )}
     </div>
   );
 }

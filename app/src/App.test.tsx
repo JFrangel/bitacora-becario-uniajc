@@ -17,6 +17,6 @@ describe('App · sin base de datos conectada', () => {
     expect(screen.getByRole('heading', { name: 'Falta conectar la base de datos' })).toBeTruthy();
     expect(screen.getByText('VITE_CONVEX_URL')).toBeTruthy();
     expect(document.querySelector('.app')!.getAttribute('data-theme')).toBe('grafito');
-    expect(document.querySelector('.app')!.getAttribute('data-mode')).toBe('dark');
+    expect(document.querySelector('.app')!.getAttribute('data-mode')).toBe('light');
   });
 });

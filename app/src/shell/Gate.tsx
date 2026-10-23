@@ -204,9 +204,7 @@ export function Gate(props: GateProps) {
     <div className="gate" ref={root} role="dialog" aria-modal="true" aria-labelledby="gateTitle">
       <div className="gate-brand brand">
         <span className="mark" />
-        <span className="brand-text">
-          Bitácora<em>.</em>
-        </span>
+        <span className="brand-text">Bitácora</span>
       </div>
       <main className="gate-main">{body}</main>
     </div>

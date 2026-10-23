@@ -59,6 +59,18 @@ describe('session.ensureOwner', () => {
     expect(await owner.client.run((ctx) => getActor(ctx))).toMatchObject({ isOwner: true });
   });
 
+  it('attaches the existing profile row to the owner without replacing its carnet data', async () => {
+    vi.stubEnv('OWNER_EMAIL', 'dueña@example.com');
+    const t = newTest();
+    const owner = await asUser(t, 'dueña@example.com', 'Dueña');
+    await t.run((ctx) => ctx.db.insert('profile', { program: 'Sistemas', group: 'AthenIA', updatedAt: 1 }));
+    await owner.client.mutation(api.session.ensureOwner, {});
+
+    const [profile] = await t.run((ctx) => ctx.db.query('profile').collect());
+    const [member] = await t.run((ctx) => ctx.db.query('members').collect());
+    expect(profile).toMatchObject({ memberId: member._id, program: 'Sistemas', group: 'AthenIA', updatedAt: 1 });
+  });
+
   it('rejects any other Google account', async () => {
     vi.stubEnv('OWNER_EMAIL', 'dueña@example.com');
     const t = newTest();

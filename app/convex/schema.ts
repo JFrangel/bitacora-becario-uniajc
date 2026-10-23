@@ -41,14 +41,27 @@ export default defineSchema({
   }),
 
   profile: defineTable({
+    // Opcional mientras se asocia el carné global existente con la cuenta propietaria.
+    memberId: v.optional(v.id('members')),
     program: v.optional(v.string()),
     term: v.optional(v.string()),
     institution: v.optional(v.string()),
     group: v.optional(v.string()),
+    frontDescription: v.optional(v.string()),
+    groupLogoDataUrl: v.optional(v.string()),
+    backTitle: v.optional(v.string()),
+    backDescription: v.optional(v.string()),
+    backFooter: v.optional(v.string()),
     badgeDesign: v.optional(v.string()),
     photoDataUrl: v.optional(v.string()),
+    shareEnabled: v.optional(v.boolean()),
+    shareTokenHash: v.optional(v.string()),
+    sharePhoto: v.optional(v.boolean()),
+    shareAcademic: v.optional(v.boolean()),
     updatedAt: v.number(),
-  }),
+  })
+    .index('by_memberId', ['memberId'])
+    .index('by_shareTokenHash', ['shareTokenHash']),
 
   projects: defineTable({
     name: v.string(),

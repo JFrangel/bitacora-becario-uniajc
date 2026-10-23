@@ -17,6 +17,8 @@ export type FacesInput = {
   palette: Palette;
   /** La foto ya recortada (cuadrada) o `null` para usar las iniciales. */
   photo?: CanvasImageSource | null;
+  /** Logotipo opcional propio del grupo; se conserva su color original. */
+  groupLogo?: CanvasImageSource | null;
   /** El logotipo de AthenIA como máscara de una sola tinta. */
   logoMask?: CanvasImageSource | null;
   /** Factor de resolución de las caras (2 = 2048 × 2880). */
@@ -80,11 +82,12 @@ const toBlobUrl = (canvas: Canvas, type: string, quality?: number) =>
  * como imágenes (`blob:`). Los datos son solo los del carné: nombre, rol, programa, semestre, institución y grupo.
  */
 export async function drawBadgeFaces(input: FacesInput, makeCanvas: () => Canvas = defaultCanvas, encode: typeof toBlobUrl = toBlobUrl): Promise<Faces> {
-  const { design, data, palette, photo = null, logoMask = null, scale = 2 } = input;
+  const { design, data, palette, photo = null, groupLogo = null, logoMask = null, scale = 2 } = input;
   const spec = DESIGNS[isDesignId(design) ? design : DEFAULT_DESIGN];
   const group = (data.group ?? '').trim();
-  const logoOn = hasGroupLogo(group) && Boolean(logoMask);
-  const { brand, onBrand } = brandColors(palette.accent, palette.dark, logoOn);
+  const atheniaMark = !groupLogo && hasGroupLogo(group) && Boolean(logoMask);
+  const logoOn = Boolean(groupLogo) || atheniaMark;
+  const { brand, onBrand } = brandColors(palette.accent, palette.dark, atheniaMark);
   const [W, H, CX] = [FACE_W, FACE_H, FACE_W / 2];
 
   const label: DrawEnv['label'] = (c, text, x, y, color = palette.muted, size = 30, spacing = 3) => {
@@ -94,13 +97,29 @@ export async function drawBadgeFaces(input: FacesInput, makeCanvas: () => Canvas
     c.fillText(text, x, y);
     c.letterSpacing = '0px';
   };
+  const fitLabel: DrawEnv['fitLabel'] = (c, text, x, y, color, size, maxWidth, spacing = 3) => {
+    let current = size;
+    const spacingWidth = Math.max(0, text.length - 1) * spacing;
+    while (current > 8) {
+      c.font = `500 ${current}px ${palette.fontMono}`;
+      if (c.measureText(text).width + spacingWidth <= maxWidth) break;
+      current = Math.max(8, current - 1);
+    }
+    c.font = `500 ${current}px ${palette.fontMono}`;
+    c.fillStyle = color;
+    c.textAlign = 'center';
+    c.letterSpacing = `${spacing}px`;
+    c.fillText(text, x, y);
+    c.letterSpacing = '0px';
+  };
   const fit: DrawEnv['fit'] = (c, text, weight, size, maxWidth, min = 28, family = SANS, style = '') => {
     let current = size;
-    do {
+    while (current > min) {
       c.font = `${style} ${weight} ${current}px ${family}`.trim();
-      if (c.measureText(text).width <= maxWidth) break;
-      current -= 2;
-    } while (current > min);
+      if (c.measureText(text).width <= maxWidth) return;
+      current = Math.max(min, current - 2);
+    }
+    c.font = `${style} ${weight} ${current}px ${family}`.trim();
   };
   const wrap: DrawEnv['wrap'] = (c, text, x, y, maxWidth, lineHeight) => {
     let row = '';
@@ -117,8 +136,8 @@ export async function drawBadgeFaces(input: FacesInput, makeCanvas: () => Canvas
     return yy;
   };
   /** El nombre del grupo con «IA» resaltado. Con `left`, `x` es el borde izquierdo; si no, el centro. */
-  const wordmark: DrawEnv['wordmark'] = (c, x, y, size, base, accentColor, family = SANS, weight = 700, left = false) => {
-    const word = group || 'AthenIA';
+  const wordmark: DrawEnv['wordmark'] = (c, x, y, size, base, accentColor, family = SANS, weight = 700, left = false, text) => {
+    const word = text ?? (group || 'AthenIA');
     const cut = /ia$/i.test(word) ? word.length - 2 : word.length;
     c.font = `${weight} ${size}px ${family}`;
     const [a1, a2] = [word.slice(0, cut), word.slice(cut)];
@@ -131,18 +150,21 @@ export async function drawBadgeFaces(input: FacesInput, makeCanvas: () => Canvas
     c.fillText(a2, x0 + wa, y);
     return wa + wb;
   };
-  /** El logotipo (máscara de una sola tinta) teñido del color pedido y al ancho pedido. */
+  /** Redimensiona el logo del grupo; tiñe la máscara de AthenIA o conserva los colores del logo propio. */
   const tint: DrawEnv['tint'] = async (color, width) => {
-    if (!logoMask) return null;
-    const source = logoMask as CanvasImageSource & { width: number; height: number };
+    const image = groupLogo ?? logoMask;
+    if (!image) return null;
+    const source = image as CanvasImageSource & { width: number; height: number };
     const canvas = makeCanvas();
     canvas.width = width;
     canvas.height = Math.round((width * source.height) / source.width);
     const c = canvas.getContext('2d')!;
     c.drawImage(source, 0, 0, canvas.width, canvas.height);
-    c.globalCompositeOperation = 'source-in';
-    c.fillStyle = color;
-    c.fillRect(0, 0, canvas.width, canvas.height);
+    if (!groupLogo) {
+      c.globalCompositeOperation = 'source-in';
+      c.fillStyle = color;
+      c.fillRect(0, 0, canvas.width, canvas.height);
+    }
     return canvas;
   };
 
@@ -152,12 +174,16 @@ export async function drawBadgeFaces(input: FacesInput, makeCanvas: () => Canvas
     mono: palette.fontMono, body: palette.fontBody, bg: palette.bg, ink: palette.ink, muted: palette.muted, accent: palette.accent,
     onAccent: onAccentFor(palette.accent), line: palette.line, dark: palette.dark, brand, onBrand, deep: '#0b2f73', rgba,
     photo, group, logoOn,
+    frontDescription: data.frontDescription === undefined ? 'grupo de investigación en IA' : data.frontDescription.trim(),
+    backTitle: data.backTitle?.trim() || group || 'AthenIA',
+    backDescription: data.backDescription?.trim() || 'GRUPO DE INVESTIGACIÓN EN INTELIGENCIA ARTIFICIAL',
+    backFooter: data.backFooter?.trim() || 'UNIAJC · CALI',
     name: data.name, role, program: data.program ?? '', term: data.term ?? '', school: data.institution ?? '',
     lines: nameLines(data.name), initials: initialsOf(data.name),
     pill: (group ? `${role} de ${group}` : role).toUpperCase(),
     detail: joinDot(data.program, data.term),
     markBack: logoOn ? await tint('#ffffff', 520) : null,
-    label, fit, wrap, wordmark, tint,
+    label, fitLabel, fit, wrap, wordmark, tint,
   };
 
   const face = (): [Canvas, Ctx2D] => {

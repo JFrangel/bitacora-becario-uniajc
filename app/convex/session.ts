@@ -4,7 +4,7 @@ import { fail } from './lib/errors';
 
 /**
  * Primera entrada de la dueña: crea su registro en `members` (con `isOwner`), la fila única de `settings`
- * y la de `profile`. Es idempotente. Solo la cuenta cuyo correo coincide con `OWNER_EMAIL` puede llamarla;
+ * y su perfil. También asocia el perfil global anterior con esa cuenta. Es idempotente. Solo la cuenta cuyo correo coincide con `OWNER_EMAIL` puede llamarla;
  * sin la variable definida nadie es dueña (falla cerrada).
  */
 export const ensureOwner = mutation({
@@ -34,8 +34,12 @@ export const ensureOwner = mutation({
     if (!(await ctx.db.query('settings').first())) {
       await ctx.db.insert('settings', { shareEnabled: false, shareIncludesJournal: true, shareShowsDescriptions: false, timezone: 'America/Bogota' });
     }
-    if (!(await ctx.db.query('profile').first())) {
-      await ctx.db.insert('profile', { updatedAt: now });
+    const profiles = await ctx.db.query('profile').collect();
+    const ownProfile = profiles.find((profile) => profile.memberId === member!._id);
+    if (!ownProfile) {
+      const legacy = profiles.find((profile) => profile.memberId === undefined);
+      if (legacy) await ctx.db.patch(legacy._id, { memberId: member!._id });
+      else await ctx.db.insert('profile', { memberId: member!._id, updatedAt: now });
     }
     return member!._id;
   },

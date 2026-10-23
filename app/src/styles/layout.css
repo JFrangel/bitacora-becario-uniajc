@@ -10,6 +10,7 @@
   .app[data-theme] .nav { grid-template-columns: 1fr auto; grid-template-areas: "brand who" "tabs tabs"; row-gap: 8px; padding: 10px 12px 0; }
   .app[data-theme="grafito"] .nav { padding-bottom: 12px; }
   .app[data-theme] .brand { grid-area: brand; }
+  .app[data-theme] .brand-subtitle { max-width: 42vw; }
   .app[data-theme] .who { grid-area: who; }
   .app[data-theme] .tabs { grid-area: tabs; justify-self: stretch; overflow: visible; }
   .app[data-theme] .tab { flex: 1; justify-content: center; gap: 4px; padding-left: 4px; padding-right: 4px; font-size: 12.5px; }
@@ -47,6 +48,13 @@ button.avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: 
 .badge-stage { position: relative; flex: 0 0 auto; height: min(660px, 70vh); margin: 0 -22px; overflow: hidden; touch-action: none; }
 .profile-actions { display: flex; gap: 10px; margin-top: 20px; }
 .photo-edit { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: center; }
+.badge-edit-section { display: grid; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+.badge-edit-section h3 { margin: 0; font-size: 14px; }
+.badge-logo-edit { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 14px; align-items: center; }
+.badge-logo-preview { display: grid; place-items: center; width: 88px; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); font-size: 11px; }
+.badge-logo-preview img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.badge-logo-controls { display: grid; justify-items: start; gap: 8px; }
+.badge-logo-controls .ev-hint { margin: 0; }
 .crop-canvas { width: 220px; height: 220px; border: 1px solid var(--line); border-radius: 20px; cursor: grab; touch-action: none; }
 .crop-canvas:active { cursor: grabbing; }
 .crop-canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -74,6 +82,13 @@ button.avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: 
 .badge-hit[hidden] { display: none; }
 @media (max-width: 1100px) { #view-journal.active { display: block; } .journal-badge { display: none; } }
 @media (max-width: 640px) { .photo-edit { grid-template-columns: 1fr; justify-items: center; } }
+@media (max-width: 520px) {
+  .profile-public { gap: 18px; padding: 18px 16px; }
+  .profile-public-card { padding: 20px 16px; }
+  .profile-public-person { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; }
+  .profile-public-photo, .profile-public-initials { width: 72px; }
+  .profile-public-person h1 { font-size: 24px; }
+}
 .badge-stage .lanyard { position: relative; width: 100%; height: 100%; overflow: hidden; }
 .badge-stage .lanyard-canvas { display: block; width: 100%; height: 100%; }
 .badge-flat { display: block; height: 100%; margin: 0 auto; padding: 8px 0; border-radius: 18px; }
@@ -83,6 +98,29 @@ button.avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: 
 .profile-facts { display: grid; gap: 12px; margin: 4px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
 .profile-facts dt { font: 500 10.5px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .profile-facts dd { margin: 2px 0 0; font-size: 14px; }
+.profile-share { display: grid; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+.profile-share h3 { margin: 0; font-size: 15px; }
+.profile-share .check { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; cursor: pointer; }
+.profile-share-link { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.profile-share-link input { min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: inherit; font: 11px var(--font-mono); }
+.profile-share-link input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.profile-share-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.profile-public { display: grid; grid-template-rows: auto 1fr auto; gap: 28px; min-height: 100vh; padding: 24px max(20px, calc((100vw - 760px) / 2)); background: var(--bg); color: var(--ink); }
+.profile-public-brand { display: inline-flex; align-items: center; gap: 10px; width: fit-content; }
+.profile-public-status { align-self: center; justify-self: center; max-width: 520px; padding: 28px 0; text-align: center; color: var(--muted); }
+.profile-public-status h1 { margin: 0 0 8px; color: var(--ink); font-size: 24px; }
+.profile-public-status p { margin: 0; }
+.profile-public-card { align-self: center; width: 100%; padding: 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.profile-public-person { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 22px; align-items: center; }
+.profile-public-photo, .profile-public-initials { display: grid; place-items: center; width: 104px; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 50%; object-fit: cover; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.profile-public-initials { color: var(--accent); font-size: 28px; font-weight: 700; }
+.profile-public-person h1 { margin: 4px 0; font-size: 30px; line-height: 1.1; overflow-wrap: anywhere; }
+.profile-public-person .eyebrow { margin: 0; }
+.profile-public-role { margin: 0; color: var(--muted); }
+.profile-public-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 18px; margin: 28px 0 0; padding-top: 20px; border-top: 1px solid var(--line); }
+.profile-public-facts dt { font: 500 10.5px var(--font-mono); color: var(--muted); text-transform: uppercase; }
+.profile-public-facts dd { margin: 4px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+.profile-public-foot { margin: 0; color: var(--muted); font: 10.5px var(--font-mono); text-align: center; }
 @media (prefers-reduced-motion: reduce) { button.avatar { transition: none; } }
 
 /* Galería de diseños del carné */

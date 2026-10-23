@@ -63,6 +63,16 @@ describe('the five designs', () => {
     expect(text).toMatch(/instituci/);
   });
 
+  it.each(DESIGN_ORDER)('%s prints the configured title, description and footer on the reverse', async (design) => {
+    const { back } = await draw(design, {
+      data: { backTitle: 'LABORATORIO NOVA', backDescription: 'INVESTIGACION APLICADA', backFooter: 'CALI COLOMBIA' },
+    });
+    const text = back.texts.join(' ').toUpperCase();
+    expect(text).toContain('LABORATORIO NOVA');
+    expect(text).toContain('INVESTIGACION APLICADA');
+    expect(text).toContain('CALI COLOMBIA');
+  });
+
   it.each(DESIGN_ORDER)('%s never prints an e-mail address, a phone number or a document number', async (design) => {
     const { front, back, strap } = await draw(design);
     for (const canvas of [front, back, strap]) {
@@ -96,6 +106,15 @@ describe('the five designs', () => {
     expect(front.texts).toEqual(expect.arrayContaining(['<', 'Becario', ' de', '=', '"AthenIA"', ' />']));
     expect(front.texts.some((t) => t.startsWith('const '))).toBe(true);
     expect(front.texts).toContain('athenia.ts');
+  });
+
+  it('uses the editable front description and lets it be hidden', async () => {
+    const custom = await draw('olimpo', { data: { frontDescription: 'IA aplicada' } });
+    expect(custom.front.texts).toContain('// IA aplicada');
+    const hidden = await draw('olimpo', { data: { frontDescription: '' } });
+    expect(hidden.front.texts).not.toContain('// grupo de investigación en IA');
+    const classic = await draw('clasico', { data: { frontDescription: 'IA aplicada' } });
+    expect(classic.front.texts).toContain('AthenIA · IA aplicada');
   });
 
   it('only Circuito animates, with a halo inside the card that needs no per-frame drawing', async () => {

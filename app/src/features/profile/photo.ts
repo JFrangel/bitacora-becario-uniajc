@@ -54,6 +54,28 @@ const decodedBytes = (dataUrl: string) => {
   return Math.floor((payload.length * 3) / 4) - padding;
 };
 
+/** Redimensiona el logo sin recortarlo y conserva transparencia cuando usa PNG o WebP. */
+export function optimizeBadgeLogo(img: Drawable, makeCanvas: () => HTMLCanvasElement = () => document.createElement('canvas')): string {
+  for (const maxSide of [512, 384, 256]) {
+    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+    const canvas = makeCanvas();
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('No se pudo procesar el logo.');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const png = canvas.toDataURL('image/png');
+    if (decodedBytes(png) <= LIMITS.badgeLogoBytes) return png;
+    for (const quality of [0.9, 0.82, 0.74]) {
+      const webp = canvas.toDataURL('image/webp', quality);
+      if (webp.startsWith('data:image/webp;base64,') && decodedBytes(webp) <= LIMITS.badgeLogoBytes) return webp;
+    }
+  }
+  throw new Error('El logo no se pudo comprimir a 180 KB. Prueba con una imagen más pequeña.');
+}
+
 /**
  * La foto del carné: un cuadrado de 1024 px en JPEG de a lo sumo 400 KB. `t` describe el encuadre en las unidades de la
  * vista previa de 220 px. Baja la calidad (0,92 → 0,62) hasta que cabe. Con `enhance: false` no toca la imagen.

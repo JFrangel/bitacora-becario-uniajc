@@ -62,6 +62,10 @@ export const revoke = mutation({
     if (!member) throw fail('NOT_FOUND');
     const now = Date.now();
     if (member.revokedAt === undefined) await ctx.db.patch(memberId, { revokedAt: now });
+    const profile = await ctx.db.query('profile').withIndex('by_memberId', (q) => q.eq('memberId', memberId)).unique();
+    if (profile?.shareEnabled || profile?.shareTokenHash) {
+      await ctx.db.patch(profile._id, { shareEnabled: false, shareTokenHash: undefined, sharePhoto: false, shareAcademic: false, updatedAt: now });
+    }
     const invites = await ctx.db.query('invites').withIndex('by_creator', (q) => q.eq('createdBy', memberId)).collect();
     for (const invite of invites) {
       if (invite.usedAt === undefined && invite.revokedAt === undefined) await ctx.db.patch(invite._id, { revokedAt: now });

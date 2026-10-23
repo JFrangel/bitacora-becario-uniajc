@@ -102,6 +102,8 @@ export const redeem = mutation({
     } else {
       memberId = await ctx.db.insert('members', { name, roleLabel, isOwner: false, userId, email, invitedBy: invite.createdBy, createdAt: now, lastSeenAt: now });
     }
+    const profile = await ctx.db.query('profile').withIndex('by_memberId', (q) => q.eq('memberId', memberId)).unique();
+    if (!profile) await ctx.db.insert('profile', { memberId, updatedAt: now });
     await ctx.db.patch(invite._id, { usedBy: memberId, usedAt: now });
     await logEvent(ctx, { memberId, isOwner: false, name, roleLabel }, { type: 'member.joined', subjectKind: 'member', subjectId: memberId, subjectTitle: name });
     return { memberId };

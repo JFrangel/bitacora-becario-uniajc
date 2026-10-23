@@ -20,7 +20,7 @@ const setup = () => {
 };
 
 describe('AppearanceMenu', () => {
-  it('starts closed, with Grafito oscuro active and marked as the default', async () => {
+  it('starts closed, with Grafito claro active and marked as the default', async () => {
     const user = setup();
     const button = screen.getByRole('button', { name: 'Apariencia' });
     expect(button.getAttribute('aria-expanded')).toBe('false');
@@ -29,7 +29,7 @@ describe('AppearanceMenu', () => {
     expect(button.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByRole('button', { name: /Grafito/ }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByText('predeterminado')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Oscuro' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Claro' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByText('Los tres estilos tienen tema oscuro y tema claro.')).toBeTruthy();
   });
 
@@ -37,6 +37,8 @@ describe('AppearanceMenu', () => {
     const user = setup();
     await user.click(screen.getByRole('button', { name: 'Apariencia' }));
     await user.click(screen.getByRole('button', { name: 'Papel' }));
+    expect(screen.getByTestId('now').textContent).toBe('papel-light');
+    await user.click(screen.getByRole('button', { name: 'Oscuro' }));
     expect(screen.getByTestId('now').textContent).toBe('papel-dark');
     await user.click(screen.getByRole('button', { name: 'Claro' }));
     expect(screen.getByTestId('now').textContent).toBe('papel-light');

@@ -12,6 +12,8 @@ type NavbarProps = {
   includesJournal?: boolean;
   /** Borradores por documentar (insignia de la pestaña Bitácora). */
   draftCount?: number;
+  /** Nombre de la propietaria, mostrado bajo la marca en solo lectura. */
+  brandSubtitle?: string;
   /** «Tú · Becario» o «Solo lectura». */
   whoText: string;
   /** Iniciales del botón de perfil. */
@@ -23,7 +25,7 @@ type NavbarProps = {
 };
 
 /** Barra superior: marca, pestañas con indicador deslizante, «Invitar», «Apariencia» y el perfil. */
-export function Navbar({ audience, active, includesJournal = false, draftCount = 0, whoText, initials, profileLabel, onSelect, onInvite, onProfile }: NavbarProps) {
+export function Navbar({ audience, active, includesJournal = false, draftCount = 0, brandSubtitle, whoText, initials, profileLabel, onSelect, onInvite, onProfile }: NavbarProps) {
   const visible = tabsFor(audience, includesJournal);
   const nav = useRef<HTMLElement>(null);
   const indicator = useRef<HTMLSpanElement>(null);
@@ -48,8 +50,9 @@ export function Navbar({ audience, active, includesJournal = false, draftCount =
     <header className="nav">
       <div className="brand">
         <span className="mark" />
-        <span className="brand-text">
-          Bitácora<em>.</em>
+        <span className="brand-copy">
+          <span className="brand-text">Bitácora</span>
+          {brandSubtitle && <span className="brand-subtitle">{brandSubtitle}</span>}
         </span>
       </div>
       <nav className="tabs" ref={nav} aria-label="Secciones">

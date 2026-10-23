@@ -5,9 +5,9 @@ beforeEach(() => localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
 describe('loadAppearance', () => {
-  it('starts as Grafito oscuro', () => {
-    expect(loadAppearance()).toEqual({ style: 'grafito', mode: 'dark' });
-    expect(DEFAULT_APPEARANCE).toEqual({ style: 'grafito', mode: 'dark' });
+  it('starts as Grafito claro', () => {
+    expect(loadAppearance()).toEqual({ style: 'grafito', mode: 'light' });
+    expect(DEFAULT_APPEARANCE).toEqual({ style: 'grafito', mode: 'light' });
   });
 
   it('reads back what was saved, for the six combinations', () => {
@@ -55,6 +55,6 @@ describe('applyAppearance', () => {
   it('creates the theme-color tag when the page does not have one', () => {
     document.head.innerHTML = '';
     applyAppearance(document.createElement('div'), DEFAULT_APPEARANCE);
-    expect(document.querySelector('meta[name="theme-color"]')!.getAttribute('content')).toBe(THEME_COLORS['grafito-dark']);
+    expect(document.querySelector('meta[name="theme-color"]')!.getAttribute('content')).toBe(THEME_COLORS['grafito-light']);
   });
 });

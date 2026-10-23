@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { LIMITS } from '../../../convex/lib/limits';
-import { CROP_VIEW, cropToJpeg, enhanceImageData } from './photo';
+import { CROP_VIEW, cropToJpeg, enhanceImageData, optimizeBadgeLogo } from './photo';
 
 /** ImageData falso: 3 canales + alfa, `width` × `height`. */
 const image = (width: number, height: number, fill: (x: number, y: number) => number) => {
@@ -113,5 +113,34 @@ describe('cropToJpeg', () => {
     const enhance = vi.fn();
     cropToJpeg(photo, { scale: 0.1, ox: 0, oy: 0 }, undefined, { makeCanvas: () => fakeCanvas(() => 10_000).canvas, enhance });
     expect(enhance).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('optimizeBadgeLogo', () => {
+  it('keeps a transparent PNG, preserves the aspect ratio and caps its longest side at 512 px', () => {
+    const context = { clearRect: vi.fn(), drawImage: vi.fn() };
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: () => context,
+      toDataURL: vi.fn(() => 'data:image/png;base64,AAAA'),
+    } as unknown as HTMLCanvasElement;
+    const image = { width: 1600, height: 800 } as HTMLImageElement;
+
+    expect(optimizeBadgeLogo(image, () => canvas)).toBe('data:image/png;base64,AAAA');
+    expect([canvas.width, canvas.height]).toEqual([512, 256]);
+    expect(context.drawImage).toHaveBeenCalledWith(image, 0, 0, 512, 256);
+  });
+
+  it('falls back to compressed WebP when the transparent PNG would exceed the profile budget', () => {
+    const context = { clearRect: vi.fn(), drawImage: vi.fn() };
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: () => context,
+      toDataURL: vi.fn((type: string) => (type === 'image/png' ? `data:image/png;base64,${'A'.repeat(250000)}` : 'data:image/webp;base64,AAAA')),
+    } as unknown as HTMLCanvasElement;
+
+    expect(optimizeBadgeLogo({ width: 512, height: 512 } as HTMLImageElement, () => canvas)).toBe('data:image/webp;base64,AAAA');
   });
 });

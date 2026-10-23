@@ -5,8 +5,8 @@ export type Appearance = { style: Style; mode: Mode };
 export const STYLES: readonly Style[] = ['grafito', 'papel', 'tinta'];
 export const MODES: readonly Mode[] = ['dark', 'light'];
 
-/** Grafito oscuro: el estilo predeterminado de la dueña. */
-export const DEFAULT_APPEARANCE: Appearance = { style: 'grafito', mode: 'dark' };
+/** Grafito claro: apariencia inicial para navegadores sin preferencia guardada. */
+export const DEFAULT_APPEARANCE: Appearance = { style: 'grafito', mode: 'light' };
 
 const KEY = 'bitacora.appearance';
 

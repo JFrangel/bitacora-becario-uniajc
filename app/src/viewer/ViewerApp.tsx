@@ -7,6 +7,7 @@ import type { SessionInfo } from '../audience';
 import { errorCode } from '../convexClient';
 import { useBoardData } from '../data/useBoardData';
 import { LandedProvider } from '../features/board/landed';
+import { useBadgeData } from '../features/profile/useBadge';
 import { ProfilePanel } from '../features/profile/ProfilePanel';
 import { ProfileUiProvider, useProfileUi } from '../features/profile/ProfileUi';
 import { TaskPanelProvider } from '../features/tasks/TaskPanelHost';
@@ -45,6 +46,7 @@ class ViewerBoundary extends Component<{ children: ReactNode }, { failed: boolea
 function ViewerShell({ token, active, includesJournal }: { token: string; active: Tab; includesJournal: boolean }) {
   const ui = useProfileUi();
   const { summary } = useBoardData();
+  const owner = useBadgeData();
   return (
     <>
       <Navbar
@@ -52,6 +54,7 @@ function ViewerShell({ token, active, includesJournal }: { token: string; active
         active={active}
         includesJournal={includesJournal}
         draftCount={summary?.drafts ?? 0}
+        brandSubtitle={owner?.name ? `De ${owner.name}` : undefined}
         whoText="Solo lectura"
         initials="U"
         profileLabel="Ver el perfil de quien registra"

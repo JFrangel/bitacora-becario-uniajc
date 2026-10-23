@@ -70,9 +70,11 @@ describe('Navbar', () => {
   });
 
   it('shows who is looking and the initials in the profile button', () => {
-    draw({ whoText: 'Solo lectura', initials: 'JP', audience: 'viewer' });
+    draw({ whoText: 'Solo lectura', initials: 'JP', audience: 'viewer', brandSubtitle: 'De Jose Padilla' });
     expect(screen.getByText('Solo lectura')).toBeTruthy();
+    expect(screen.getByText('De Jose Padilla')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Ver mi perfil' }).textContent).toBe('JP');
+    expect(screen.getByText('Bitácora')).toBeTruthy();
   });
 
   it('keeps Apariencia available for everyone', () => {

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionProvider } from '../../audience';
 import type { SessionInfo } from '../../audience';
 import { fake } from '../../test/fakeConvex';
-import { LOCAL_DESIGN_KEYS, useBadgeData, useBadgeDesign } from './useBadge';
+import { dataKeyOf, LOCAL_DESIGN_KEYS, useBadgeData, useBadgeDesign } from './useBadge';
 
 vi.mock('convex/react', async () => (await import('../../test/fakeConvex')).convexReactMock);
 
@@ -51,6 +51,15 @@ describe('useBadgeData', () => {
     draw('viewer');
     expect(fake.asked.filter((q) => q.name === 'profile:get')).toHaveLength(0);
     expect(fake.asked.find((q) => q.name === 'viewer:profile')!.args).toEqual({ shareToken: 'tok' });
+  });
+});
+
+describe('dataKeyOf', () => {
+  it('invalidates the rendered faces when the logo or any reverse-side text changes', () => {
+    const base = { ...OWNER, groupLogoDataUrl: 'data:image/png;base64,AAAA', backTitle: 'AthenIA' };
+    expect(dataKeyOf(base)).not.toBe(dataKeyOf({ ...base, groupLogoDataUrl: 'data:image/png;base64,BBBB' }));
+    expect(dataKeyOf(base)).not.toBe(dataKeyOf({ ...base, frontDescription: 'IA aplicada' }));
+    expect(dataKeyOf(base)).not.toBe(dataKeyOf({ ...base, backTitle: 'AthenIA UNIAJC' }));
   });
 });
 

@@ -13,15 +13,16 @@ vi.mock('./photo', async (original) => ({
   ...(await original<typeof import('./photo')>()),
   loadImage: vi.fn(async () => ({ width: 2000, height: 1000 }) as HTMLImageElement),
   cropToJpeg: vi.fn(() => 'data:image/jpeg;base64,QUJD'),
+  optimizeBadgeLogo: vi.fn(() => 'data:image/png;base64,QUJD'),
 }));
 
-const draw = (data = OWNER_BADGE, isOwner = true) => {
+const draw = (data = OWNER_BADGE, _isOwner = true) => {
   const onDone = vi.fn();
   const onCancel = vi.fn();
   render(
     <AppearanceProvider>
       <ToastProvider>
-        <ProfileForm data={data} isOwner={isOwner} onDone={onDone} onCancel={onCancel} />
+        <ProfileForm data={data} onDone={onDone} onCancel={onCancel} />
       </ToastProvider>
     </AppearanceProvider>,
   );
@@ -33,6 +34,7 @@ const save = () => userEvent.setup().click(screen.getByRole('button', { name: 'G
 beforeEach(() => {
   fake.reset();
   vi.mocked(photo.cropToJpeg).mockClear();
+  vi.mocked(photo.optimizeBadgeLogo).mockClear();
   URL.createObjectURL = () => 'blob:foto';
   URL.revokeObjectURL = () => {};
 });
@@ -46,6 +48,7 @@ describe('ProfileForm · the owner', () => {
     expect(field(/^Programa/).value).toBe('Ingeniería de Sistemas');
     expect(field(/^Institución/).value).toBe('Institución Universitaria Antonio José Camacho');
     expect(field(/^Grupo de investigación/).value).toBe('AthenIA');
+    expect(field('Descripción del grupo').value).toBe('grupo de investigación en IA');
     expect(screen.getByRole('img', { name: /Encuadre de la foto/ })).toBeTruthy();
     expect((screen.getByLabelText('Mejorar imagen') as HTMLInputElement).checked).toBe(true);
   });
@@ -76,7 +79,11 @@ describe('ProfileForm · the owner', () => {
     await waitFor(() => expect(onDone).toHaveBeenCalled());
     expect(fake.called('members:updateSelf')).toEqual([]);
     expect(fake.called('profile:update')).toEqual([
-      { name: 'profile:update', args: { program: 'Ingeniería de Software', term: '10.º semestre', institution: 'Institución Universitaria Antonio José Camacho', group: '' } },
+      { name: 'profile:update', args: {
+        program: 'Ingeniería de Software', term: '10.º semestre', institution: 'Institución Universitaria Antonio José Camacho', group: '',
+        frontDescription: 'grupo de investigación en IA',
+        backTitle: 'AthenIA', backDescription: 'Grupo de investigación en inteligencia artificial', backFooter: 'UNIAJC · Cali',
+      } },
     ]);
     expect(document.querySelector('.toast')!.textContent).toBe('Perfil actualizado.');
   });
@@ -89,6 +96,30 @@ describe('ProfileForm · the owner', () => {
     await save();
     await waitFor(() => expect(fake.called('members:updateSelf')).toHaveLength(1));
     expect(fake.called('members:updateSelf')[0].args).toEqual({ name: 'Jose Frangel Padilla Camacho', roleLabel: 'Asistente de investigación' });
+  });
+
+  it('saves a group logo, the editable front description and the three reverse-side texts', async () => {
+    const user = userEvent.setup();
+    const { onDone } = draw();
+    fireEvent.change(document.getElementById('groupLogoFile')!, { target: { files: [new File(['logo'], 'grupo.png', { type: 'image/png' })] } });
+    await waitFor(() => expect(photo.optimizeBadgeLogo).toHaveBeenCalled());
+    await user.clear(field('Descripción del grupo'));
+    await user.type(field('Descripción del grupo'), 'Inteligencia artificial aplicada');
+    await user.clear(field('Título'));
+    await user.type(field('Título'), 'AthenIA UNIAJC');
+    await user.clear(field('Descripción'));
+    await user.type(field('Descripción'), 'Investigación e inteligencia artificial');
+    await user.clear(field('Pie de página'));
+    await user.type(field('Pie de página'), 'Cali, Colombia');
+    await save();
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(fake.called('profile:update')[0].args).toMatchObject({
+      groupLogoDataUrl: 'data:image/png;base64,QUJD',
+      frontDescription: 'Inteligencia artificial aplicada',
+      backTitle: 'AthenIA UNIAJC',
+      backDescription: 'Investigación e inteligencia artificial',
+      backFooter: 'Cali, Colombia',
+    });
   });
 
   it('shows the server message and stays in the form when saving fails', async () => {
@@ -170,22 +201,33 @@ describe('ProfileForm · the owner', () => {
 });
 
 describe('ProfileForm · a guest', () => {
-  it('only edits the name and the role: no photo and no badge data', () => {
+  it('can edit their own photo and badge data', () => {
     draw(MEMBER_BADGE, false);
     expect(field('Nombre').value).toBe('Ana Gómez');
     expect(field('Rol').value).toBe('Directora');
-    expect(screen.queryByRole('img', { name: /Encuadre de la foto/ })).toBeNull();
-    expect(screen.queryByLabelText(/^Programa/)).toBeNull();
-    expect(screen.queryByLabelText('Mejorar imagen')).toBeNull();
+    expect(screen.getByRole('img', { name: /Encuadre de la foto/ })).toBeTruthy();
+    expect(field(/^Programa/).value).toBe('');
+    expect(field(/^Semestre/).value).toBe('');
+    expect(field(/^Institución/).value).toBe('');
+    expect(field(/^Grupo de investigación/).value).toBe('');
   });
 
-  it('saves with «members.updateSelf» and never with «profile.update»', async () => {
+  it('saves name, role and carnet fields to their own records', async () => {
     const user = userEvent.setup();
     const { onDone } = draw(MEMBER_BADGE, false);
     await user.clear(field('Rol'));
     await user.type(field('Rol'), 'Directora del grupo');
+    await user.type(field(/^Programa/), 'Ingeniería de Sistemas');
+    await user.type(field(/^Grupo de investigación/), 'AthenIA');
     await save();
     await waitFor(() => expect(onDone).toHaveBeenCalled());
-    expect(fake.calls).toEqual([{ name: 'members:updateSelf', args: { name: 'Ana Gómez', roleLabel: 'Directora del grupo' } }]);
+    expect(fake.called('members:updateSelf')).toEqual([{ name: 'members:updateSelf', args: { name: 'Ana Gómez', roleLabel: 'Directora del grupo' } }]);
+    expect(fake.called('profile:update')).toEqual([
+      { name: 'profile:update', args: {
+        program: 'Ingeniería de Sistemas', term: '', institution: '', group: 'AthenIA',
+        frontDescription: 'grupo de investigación en IA',
+        backTitle: 'AthenIA', backDescription: 'Grupo de investigación en inteligencia artificial', backFooter: 'UNIAJC · Cali',
+      } },
+    ]);
   });
 });
