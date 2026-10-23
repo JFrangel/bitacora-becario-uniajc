@@ -4,13 +4,14 @@ import { journalDto } from './journalDto';
 import type { JournalDto } from './journalDto';
 import { normalizeSearch } from './text';
 import type { ActivityStatus } from './types';
+import { filterWorkspaceRows } from './workspaces';
 
 export type JournalFilters = { q?: string; projectId?: Id<'projects'>; activityStatus?: ActivityStatus; onlyDrafts?: boolean };
 
 /** Fecha descendente; dentro del día, orden manual y luego última actualización (la más reciente primero). */
-export async function listJournal(ctx: QueryCtx, filters: JournalFilters = {}, opts: { forViewer?: boolean } = {}): Promise<JournalDto[]> {
+export async function listJournal(ctx: QueryCtx, filters: JournalFilters = {}, opts: { forViewer?: boolean } = {}, workspaceId?: Id<'workspaces'>): Promise<JournalDto[]> {
   const words = normalizeSearch(filters.q ?? '').split(' ').filter(Boolean);
-  const entries = await ctx.db.query('journalEntries').withIndex('by_date').order('desc').collect();
+  const entries = filterWorkspaceRows(await ctx.db.query('journalEntries').withIndex('by_date').order('desc').collect(), workspaceId);
   const visible = entries
     .filter((e) => {
       if (filters.projectId && e.projectId !== filters.projectId) return false;
@@ -24,15 +25,18 @@ export async function listJournal(ctx: QueryCtx, filters: JournalFilters = {}, o
   const projects = new Map<Id<'projects'>, Doc<'projects'> | null>();
   return Promise.all(
     visible.map(async (entry) => {
-      if (!projects.has(entry.projectId)) projects.set(entry.projectId, await ctx.db.get(entry.projectId));
+      if (!projects.has(entry.projectId)) {
+        const project = await ctx.db.get(entry.projectId);
+        projects.set(entry.projectId, project && project.workspaceId === workspaceId ? project : null);
+      }
       return journalDto(ctx, entry, projects.get(entry.projectId) ?? null, opts);
     }),
   );
 }
 
 /** Indicadores de la Bitácora: solo los registros completos cuentan y suman horas; los borradores se cuentan aparte. */
-export async function journalSummary(ctx: QueryCtx): Promise<{ activities: number; hours: number; completed: number; drafts: number }> {
-  const entries = await ctx.db.query('journalEntries').collect();
+export async function journalSummary(ctx: QueryCtx, workspaceId?: Id<'workspaces'>): Promise<{ activities: number; hours: number; completed: number; drafts: number }> {
+  const entries = filterWorkspaceRows(await ctx.db.query('journalEntries').collect(), workspaceId);
   const complete = entries.filter((e) => e.docStatus === 'complete');
   return {
     activities: complete.length,

@@ -2,8 +2,10 @@ import { getAuthUserId } from '@convex-dev/auth/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { fail } from './errors';
+import { requireWorkspaceMembership, workspaceMembership } from './workspaces';
 
 export type Actor = { memberId: Id<'members'>; isOwner: boolean; name: string; roleLabel: string };
+export type WorkspaceActor = Actor & { workspaceId?: Id<'workspaces'>; workspaceRole: 'owner' | 'editor' };
 
 type Ctx = QueryCtx | MutationCtx;
 
@@ -31,9 +33,35 @@ export async function requireOwner(ctx: Ctx): Promise<Actor> {
   return actor;
 }
 
+/** Identidad global más rol vigente en el espacio solicitado; no deriva permisos de `members.isOwner`. */
+export async function requireWorkspaceActor(ctx: Ctx, workspaceId: Id<'workspaces'>): Promise<WorkspaceActor> {
+  const actor = await requireMember(ctx);
+  const membership = await requireWorkspaceMembership(ctx, actor.memberId, workspaceId);
+  return { ...actor, workspaceId, workspaceRole: membership.role };
+}
+
+/** Resolves omitted legacy arguments to the original workspace, or to unscoped rows before backfill exists. */
+export async function resolveWorkspaceActor(ctx: Ctx, requestedWorkspaceId?: Id<'workspaces'>): Promise<WorkspaceActor> {
+  const actor = await requireMember(ctx);
+  const workspace = requestedWorkspaceId
+    ? await ctx.db.get(requestedWorkspaceId)
+    : await ctx.db.query('workspaces').withIndex('by_legacy_key', (q) => q.eq('legacyKey', 'initial')).unique();
+  if (requestedWorkspaceId && !workspace) throw fail('FORBIDDEN', 'No tienes acceso a esta Bitácora.');
+  if (!workspace) return { ...actor, workspaceRole: actor.isOwner ? 'owner' : 'editor' };
+  const membership = await workspaceMembership(ctx, actor.memberId, workspace._id);
+  if (!membership) throw fail('FORBIDDEN', 'No tienes acceso a esta Bitácora.');
+  return { ...actor, workspaceId: workspace._id, workspaceRole: membership.role };
+}
+
+export async function requireWorkspaceOwner(ctx: Ctx, workspaceId?: Id<'workspaces'>): Promise<WorkspaceActor> {
+  const actor = await resolveWorkspaceActor(ctx, workspaceId);
+  if (actor.workspaceRole !== 'owner') throw fail('FORBIDDEN');
+  return actor;
+}
+
 /** Enlace de solo lectura: devuelve los ajustes si el token coincide y el enlace está activo. */
 export async function requireViewer(ctx: Ctx, shareToken: string): Promise<Doc<'settings'>> {
-  const settings = await ctx.db.query('settings').first();
+  const settings = await ctx.db.query('settings').withIndex('by_shareToken', (q) => q.eq('shareToken', shareToken)).unique();
   if (!settings || !settings.shareEnabled || !settings.shareToken || settings.shareToken !== shareToken) {
     throw fail('FORBIDDEN', 'Este enlace ya no está activo');
   }

@@ -4,6 +4,12 @@
   command = "npx convex deploy --cmd 'npm run build'"
   publish = "dist"
 
+# Rutas limpias de la SPA (por ejemplo /ver/<token>) deben servir el punto de entrada.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 # Seguridad: sin `unsafe-inline` ni `unsafe-eval`. Los estilos se aplican por el modelo de objetos de CSS, que `style-src 'self'` permite.
 # `connect-src` y `img-src` abren solo *.convex.cloud (datos en tiempo real e imágenes guardadas); nada más sale del dominio.
 [[headers]]

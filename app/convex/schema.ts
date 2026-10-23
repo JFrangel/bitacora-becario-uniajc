@@ -20,7 +20,31 @@ export default defineSchema({
     .index('by_userId', ['userId'])
     .index('by_email', ['email']),
 
+  workspaces: defineTable({
+    name: v.string(),
+    nameLower: v.string(),
+    ownerMemberId: v.id('members'),
+    legacyKey: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_owner', ['ownerMemberId'])
+    .index('by_nameLower', ['nameLower'])
+    .index('by_legacy_key', ['legacyKey']),
+
+  workspaceMembers: defineTable({
+    workspaceId: v.id('workspaces'),
+    memberId: v.id('members'),
+    role: v.union(v.literal('owner'), v.literal('editor')),
+    createdAt: v.number(),
+    revokedAt: v.optional(v.number()),
+  })
+    .index('by_workspace', ['workspaceId'])
+    .index('by_member', ['memberId'])
+    .index('by_member_workspace', ['memberId', 'workspaceId']),
+
   invites: defineTable({
+    workspaceId: v.optional(v.id('workspaces')),
     tokenHash: v.string(),
     createdBy: v.id('members'),
     createdAt: v.number(),
@@ -30,15 +54,19 @@ export default defineSchema({
     revokedAt: v.optional(v.number()),
   })
     .index('by_hash', ['tokenHash'])
-    .index('by_creator', ['createdBy']),
+    .index('by_creator', ['createdBy'])
+    .index('by_workspace_creator', ['workspaceId', 'createdBy']),
 
   settings: defineTable({
+    workspaceId: v.optional(v.id('workspaces')),
     shareToken: v.optional(v.string()),
     shareEnabled: v.boolean(),
     shareIncludesJournal: v.boolean(),
     shareShowsDescriptions: v.boolean(),
     timezone: v.string(),
-  }),
+  })
+    .index('by_workspace', ['workspaceId'])
+    .index('by_shareToken', ['shareToken']),
 
   profile: defineTable({
     // Opcional mientras se asocia el carné global existente con la cuenta propietaria.
@@ -64,12 +92,14 @@ export default defineSchema({
     .index('by_shareTokenHash', ['shareTokenHash']),
 
   projects: defineTable({
+    workspaceId: v.optional(v.id('workspaces')),
     name: v.string(),
     nameLower: v.string(),
     colorSlot: v.number(),
   }).index('by_nameLower', ['nameLower']),
 
   tasks: defineTable({
+    workspaceId: v.optional(v.id('workspaces')),
     title: v.string(),
     description: v.optional(v.string()),
     projectId: v.id('projects'),
@@ -91,6 +121,7 @@ export default defineSchema({
     .searchIndex('search_text', { searchField: 'searchText' }),
 
   journalEntries: defineTable({
+    workspaceId: v.optional(v.id('workspaces')),
     taskId: v.optional(v.id('tasks')),
     taskTitleSnapshot: v.optional(v.string()),
     date: v.string(),
@@ -115,6 +146,7 @@ export default defineSchema({
     .index('by_legacyId', ['legacyId']),
 
   events: defineTable({
+    workspaceId: v.optional(v.id('workspaces')),
     at: v.number(),
     actorId: v.id('members'),
     actorName: v.string(),
@@ -127,5 +159,7 @@ export default defineSchema({
     visibility: eventVisibility,
   })
     .index('by_at', ['at'])
-    .index('by_visibility_at', ['visibility', 'at']),
+    .index('by_visibility_at', ['visibility', 'at'])
+    .index('by_workspace_at', ['workspaceId', 'at'])
+    .index('by_workspace_visibility_at', ['workspaceId', 'visibility', 'at']),
 });

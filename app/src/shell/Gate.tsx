@@ -10,6 +10,7 @@ type GateProps = {
   email?: string;
   /** Nombre que Google conoce de la cuenta, para precargar el formulario de la invitación. */
   suggestedName?: string;
+  suggestedRole?: string;
   /** Error que devolvió el servidor al aceptar la invitación. */
   error?: string;
   busy?: boolean;
@@ -46,7 +47,7 @@ const Dot = () => (
   </em>
 );
 
-function InviteForm({ email, suggestedName, error, busy, onAccept, onOtherAccount }: Pick<GateProps, 'email' | 'suggestedName' | 'error' | 'busy' | 'onAccept' | 'onOtherAccount'>) {
+function InviteForm({ email, suggestedName, suggestedRole, error, busy, onAccept, onOtherAccount }: Pick<GateProps, 'email' | 'suggestedName' | 'suggestedRole' | 'error' | 'busy' | 'onAccept' | 'onOtherAccount'>) {
   const [message, setMessage] = useState('');
   const name = useRef<HTMLInputElement>(null);
   const role = useRef<HTMLInputElement>(null);
@@ -74,9 +75,7 @@ function InviteForm({ email, suggestedName, error, busy, onAccept, onOtherAccoun
         {first ? `Hola, ${first}` : 'Hola'}
         <Dot />
       </Title>
-      <p className="gate-lead">
-        Entraste como <b>{email}</b>. Confirma cómo quieres aparecer en el tablero.
-      </p>
+      <p className="gate-lead">{email ? <>Entraste como <b>{email}</b>. Confirma cómo quieres aparecer en el tablero.</> : 'Confirma cómo quieres aparecer en este espacio.'}</p>
       <form className="fill-form gate-form" noValidate onSubmit={submit}>
         <label>
           <span className="lbl">Tu nombre</span>
@@ -84,7 +83,7 @@ function InviteForm({ email, suggestedName, error, busy, onAccept, onOtherAccoun
         </label>
         <label>
           <span className="lbl">Tu rol</span>
-          <input ref={role} name="role" type="text" maxLength={60} placeholder="Ej. Directora" autoComplete="off" />
+        <input ref={role} name="role" type="text" maxLength={60} defaultValue={suggestedRole ?? ''} placeholder="Ej. Directora" autoComplete="off" />
         </label>
         <p className="form-error" role="alert">
           {message || error}
@@ -165,7 +164,7 @@ export function Gate(props: GateProps) {
       );
       break;
     case 'inviteName':
-      body = <InviteForm email={email} suggestedName={props.suggestedName} error={props.error} busy={props.busy} onAccept={props.onAccept} onOtherAccount={props.onOtherAccount} />;
+      body = <InviteForm email={email} suggestedName={props.suggestedName} suggestedRole={props.suggestedRole} error={props.error} busy={props.busy} onAccept={props.onAccept} onOtherAccount={props.onOtherAccount} />;
       break;
     case 'noAccess':
       body = status(

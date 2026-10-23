@@ -38,7 +38,7 @@ beforeEach(() => {
   fake.setQuery('invites:mine', [{ id: 'i1', expiresAt: Date.UTC(2026, 9, 28, 17) }]);
   fake.setQuery('members:list', people);
   fake.setQuery('settings:get', { enabled: false, includesJournal: true, showsDescriptions: false });
-  fake.onMutation('invites:create', async () => ({ link: 'https://bitacora.example/#/invitacion/ABC123' }));
+  fake.onMutation('invites:create', async () => ({ link: 'https://bitacora.example/invitacion/ABC123' }));
 });
 
 describe('AccessPanel · invitations', () => {
@@ -48,10 +48,10 @@ describe('AccessPanel · invitations', () => {
     await user.click(screen.getByRole('button', { name: 'Invitar a alguien' }));
     expect(fake.called('invites:create')).toHaveLength(1);
     const field = (await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement;
-    expect(field.value).toBe('https://bitacora.example/#/invitacion/ABC123');
+    expect(field.value).toBe('https://bitacora.example/invitacion/ABC123');
     expect(screen.getByText(/Es de un solo uso y caduca en 7 días/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Copiar' }));
-    expect(await navigator.clipboard.readText()).toBe('https://bitacora.example/#/invitacion/ABC123');
+    expect(await navigator.clipboard.readText()).toBe('https://bitacora.example/invitacion/ABC123');
     expect(document.querySelector('.toast')!.textContent).toBe('Enlace copiado.');
   });
 
@@ -141,12 +141,12 @@ describe('AccessPanel · the owner', () => {
 
   it('shows the link while it is active, with «Copiar», «Desactivar» and the two options', async () => {
     const user = userEvent.setup();
-    fake.setQuery('settings:get', { enabled: true, includesJournal: true, showsDescriptions: false, link: 'https://bitacora.example/#/ver/TOKEN' });
+    fake.setQuery('settings:get', { enabled: true, includesJournal: true, showsDescriptions: false, link: 'https://bitacora.example/ver/TOKEN' });
     draw('owner');
     const section = screen.getByRole('region', { name: 'Enlace de solo lectura' });
-    expect((within(section).getByLabelText('Enlace de solo lectura') as HTMLInputElement).value).toBe('https://bitacora.example/#/ver/TOKEN');
+    expect((within(section).getByLabelText('Enlace de solo lectura') as HTMLInputElement).value).toBe('https://bitacora.example/ver/TOKEN');
     await user.click(within(section).getByRole('button', { name: 'Copiar' }));
-    expect(await navigator.clipboard.readText()).toBe('https://bitacora.example/#/ver/TOKEN');
+    expect(await navigator.clipboard.readText()).toBe('https://bitacora.example/ver/TOKEN');
     await user.click(within(section).getByRole('checkbox', { name: 'Mostrar descripciones de las tareas' }));
     expect(fake.called('settings:setShare').at(-1)!.args).toEqual({ showsDescriptions: true });
     await user.click(within(section).getByRole('checkbox', { name: 'Incluir la Bitácora' }));
@@ -157,8 +157,8 @@ describe('AccessPanel · the owner', () => {
 
   it('warns that the old link stops working before regenerating it', async () => {
     const user = userEvent.setup();
-    fake.setQuery('settings:get', { enabled: true, includesJournal: true, showsDescriptions: false, link: 'https://bitacora.example/#/ver/TOKEN' });
-    fake.onMutation('settings:regenerateShare', async () => ({ link: 'https://bitacora.example/#/ver/NUEVO' }));
+    fake.setQuery('settings:get', { enabled: true, includesJournal: true, showsDescriptions: false, link: 'https://bitacora.example/ver/TOKEN' });
+    fake.onMutation('settings:regenerateShare', async () => ({ link: 'https://bitacora.example/ver/NUEVO' }));
     draw('owner');
     await user.click(within(screen.getByRole('region', { name: 'Enlace de solo lectura' })).getByRole('button', { name: 'Regenerar enlace' }));
     const dialog = screen.getByRole('alertdialog', { name: '¿Regenerar el enlace?' });

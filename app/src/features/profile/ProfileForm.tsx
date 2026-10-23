@@ -2,6 +2,7 @@ import { useMutation } from 'convex/react';
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { api } from '../../../convex/_generated/api';
+import type { Id } from '../../../convex/_generated/dataModel';
 import type { BadgeData } from '../../../convex/lib/profile';
 import { errorMessage } from '../../convexClient';
 import { MAX_IMAGE_BYTES } from '../journal/images';
@@ -14,6 +15,7 @@ import { cropToJpeg, loadImage, optimizeBadgeLogo } from './photo';
 
 type ProfileFormProps = {
   data: BadgeData;
+  workspaceId?: Id<'workspaces'>;
   onDone: () => void;
   onCancel: () => void;
 };
@@ -27,7 +29,8 @@ const DEFAULT_BACK_DESCRIPTION = 'Grupo de investigación en inteligencia artifi
 const DEFAULT_BACK_FOOTER = 'UNIAJC · Cali';
 
 /** «Editar perfil»: los datos del carné pertenecen a la persona autenticada. */
-export function ProfileForm({ data, onDone, onCancel }: ProfileFormProps) {
+export function ProfileForm({ data, workspaceId, onDone, onCancel }: ProfileFormProps) {
+  const scope = workspaceId ? { workspaceId } : {};
   const toast = useToast();
   const updateSelf = useMutation(api.members.updateSelf);
   const updateProfile = useMutation(api.profile.update);
@@ -108,7 +111,7 @@ export function ProfileForm({ data, onDone, onCancel }: ProfileFormProps) {
     setMessage('');
     setBusy(true);
     try {
-      if (cleanName !== data.name || cleanRole !== data.roleLabel) await updateSelf({ name: cleanName, roleLabel: cleanRole });
+      if (cleanName !== data.name || cleanRole !== data.roleLabel) await updateSelf({ ...scope, name: cleanName, roleLabel: cleanRole });
       const fields: {
         program: string;
         term: string;

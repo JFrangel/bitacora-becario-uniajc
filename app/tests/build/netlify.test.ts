@@ -45,6 +45,10 @@ describe('netlify.toml', () => {
     expect(value('publish')).toBe('dist');
   });
 
+  it('serves clean application routes through the SPA entry point', () => {
+    expect(toml).toMatch(/\[\[redirects\]\]\s*from = "\/\*"\s*to = "\/index\.html"\s*status = 200/);
+  });
+
   it('caches the hashed files for a year, and only those', () => {
     expect(toml).toMatch(/for = "\/assets\/\*"[\s\S]*Cache-Control = "public, max-age=31536000, immutable"/);
     expect(toml.match(/Cache-Control/g)).toHaveLength(1);

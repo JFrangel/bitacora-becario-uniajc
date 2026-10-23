@@ -10,8 +10,10 @@ describe('schema', () => {
       const now = Date.now();
       const userId = await ctx.db.insert('users', { email: 'dueña@example.com' });
       const ownerId = await ctx.db.insert('members', { name: 'Ana', roleLabel: 'Becaria', isOwner: true, userId, email: 'dueña@example.com', createdAt: now, lastSeenAt: now });
+      const workspaceId = await ctx.db.insert('workspaces', { name: 'Principal', nameLower: 'principal', ownerMemberId: ownerId, createdAt: now, updatedAt: now });
+      await ctx.db.insert('workspaceMembers', { workspaceId, memberId: ownerId, role: 'owner', createdAt: now });
       await ctx.db.insert('invites', { tokenHash: 'h', createdBy: ownerId, createdAt: now, expiresAt: now + 1000 });
-      await ctx.db.insert('settings', { shareEnabled: false, shareIncludesJournal: true, shareShowsDescriptions: false, timezone: 'America/Bogota' });
+      await ctx.db.insert('settings', { workspaceId, shareEnabled: false, shareIncludesJournal: true, shareShowsDescriptions: false, timezone: 'America/Bogota' });
       await ctx.db.insert('profile', { updatedAt: now });
       const projectId = await ctx.db.insert('projects', { name: 'iMujer', nameLower: 'imujer', colorSlot: 1 });
       const taskId = await ctx.db.insert('tasks', { title: 'T', projectId, priority: 2, status: 'todo', order: 1, createdBy: ownerId, createdAt: now, updatedAt: now, subtasks: [], searchText: 't' });
@@ -42,7 +44,7 @@ describe('schema', () => {
 
   it('has no sessions table (Convex Auth owns sessions)', () => {
     expect(Object.keys(schema.tables)).not.toContain('sessions');
-    expect(Object.keys(schema.tables)).toEqual(expect.arrayContaining(['members', 'invites', 'settings', 'profile', 'projects', 'tasks', 'journalEntries', 'events', 'users']));
+      expect(Object.keys(schema.tables)).toEqual(expect.arrayContaining(['members', 'workspaces', 'workspaceMembers', 'invites', 'settings', 'profile', 'projects', 'tasks', 'journalEntries', 'events', 'users']));
   });
 });
 

@@ -30,9 +30,9 @@ export const board = query({
   args: { shareToken: v.string() },
   handler: async (ctx, { shareToken }) => {
     const view = await viewerView(ctx, shareToken);
-    const board = { tasks: await listTasks(ctx, view), projects: await listProjects(ctx) };
+    const board = { tasks: await listTasks(ctx, view), projects: await listProjects(ctx, view.workspaceId) };
     // Los indicadores de horas y borradores solo viajan si el enlace incluye la Bitácora.
-    return view.showJournal ? { ...board, summary: await journalSummary(ctx) } : board;
+    return view.showJournal ? { ...board, summary: await journalSummary(ctx, view.workspaceId) } : board;
   },
 });
 
@@ -53,7 +53,7 @@ export const journal = query({
   handler: async (ctx, { shareToken, ...filters }) => {
     const view = await viewerView(ctx, shareToken);
     if (!view.showJournal) throw fail('FORBIDDEN', 'Este enlace no incluye la Bitácora.');
-    return { entries: await listJournal(ctx, filters, { forViewer: true }), summary: await journalSummary(ctx) };
+    return { entries: await listJournal(ctx, filters, { forViewer: true }, view.workspaceId), summary: await journalSummary(ctx, view.workspaceId) };
   },
 });
 
@@ -99,6 +99,6 @@ export const events = query({
   args: { shareToken: v.string(), cursor: v.optional(v.union(v.string(), v.null())), actorId: v.optional(v.id('members')), subjectId: v.optional(v.string()) },
   handler: async (ctx, { shareToken, cursor, actorId, subjectId }) => {
     const view = await viewerView(ctx, shareToken);
-    return pageEvents(ctx, { withOwnerEvents: view.showJournal, cursor, actorId, subjectId });
+    return pageEvents(ctx, { withOwnerEvents: view.showJournal, workspaceId: view.workspaceId, cursor, actorId, subjectId });
   },
 });

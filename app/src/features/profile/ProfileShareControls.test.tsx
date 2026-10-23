@@ -28,7 +28,7 @@ describe('ProfileShareControls', () => {
     await user.click(screen.getByRole('button', { name: 'Crear enlace de perfil' }));
 
     const link = await screen.findByRole('textbox', { name: 'Enlace de mi perfil' }) as HTMLInputElement;
-    expect(link.value).toContain('#/perfil/random-personal-token');
+    expect(link.value).toContain('/perfil/random-personal-token');
     expect(fake.called('profile:createShareLink')[0].args).toEqual({ showPhoto: false, showAcademic: false });
   });
 

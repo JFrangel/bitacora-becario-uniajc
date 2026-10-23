@@ -4,7 +4,7 @@ import { api } from '../../convex/_generated/api';
 import { useAuthState } from '../auth';
 import { errorCode, errorMessage } from '../convexClient';
 import { useStuck } from '../lib/useConnectivity';
-import { navigate, useRoute } from '../router';
+import { hrefFor, hrefForWorkspace, navigate, useRoute } from '../router';
 import type { Route } from '../router';
 import { ViewerApp } from '../viewer/ViewerApp';
 import { SharedProfileApp } from '../viewer/SharedProfileApp';
@@ -28,7 +28,7 @@ function MemberRoot({ route, reload }: { route: Route; reload: () => void }) {
   const toast = useToast();
   const { state, me, signIn, signOut } = useAuthState({ tryOwner: !isInvite });
   const stuck = useStuck(state === 'loading');
-  const peek = useQuery(api.invites.peek, isInvite && state === 'anonymous' ? { inviteToken: route.token! } : 'skip');
+  const peek = useQuery(api.invites.peek, isInvite ? { inviteToken: route.token! } : 'skip');
   const redeem = useMutation(api.invites.redeem);
 
   const [revokedNotice, setRevokedNotice] = useState(false);
@@ -50,28 +50,23 @@ function MemberRoot({ route, reload }: { route: Route; reload: () => void }) {
     if (state === 'active') signedOut.current = false;
   }, [state]);
 
-  // Quien ya tiene acceso y abre una invitación va directo al tablero.
-  useEffect(() => {
-    if (isInvite && state === 'active') navigate('#/');
-  }, [isInvite, state]);
-
   const goHome = () => {
     setRevokedNotice(false);
     setInviteInvalid(false);
-    navigate('#/');
+    navigate(hrefFor('board'));
   };
 
   const accept = async ({ name, roleLabel }: { name: string; roleLabel: string }) => {
     setBusy(true);
     setRedeemError('');
     try {
-      await redeem({ inviteToken: route.token!, name, roleLabel });
-      navigate('#/');
+      const accepted = await redeem({ inviteToken: route.token!, name, roleLabel });
+      navigate(hrefForWorkspace('board', accepted.workspaceId, accepted.isInitial));
       toast(`Bienvenido/a, ${name}.`);
     } catch (error) {
       const code = errorCode(error);
       if (code?.startsWith('INVITE_')) setInviteInvalid(true);
-      else if (code === 'ALREADY_MEMBER') navigate('#/');
+      else if (code === 'ALREADY_MEMBER') navigate(hrefFor('board'));
       else if (code === 'VALIDATION') setRedeemError(errorMessage(error) ?? 'Revisa tu nombre y tu rol.');
       else setRedeemError('No se pudo aceptar la invitación. Inténtalo de nuevo.');
     } finally {
@@ -83,7 +78,8 @@ function MemberRoot({ route, reload }: { route: Route; reload: () => void }) {
     <Gate
       state={name}
       email={me && 'email' in me ? me.email : undefined}
-      suggestedName={me && 'name' in me && me.status === 'none' ? me.name : undefined}
+      suggestedName={me && 'name' in me && (me.status === 'none' || me.status === 'active') ? me.name : undefined}
+      suggestedRole={me?.status === 'active' ? me.roleLabel : undefined}
       error={redeemError}
       busy={busy}
       onGoogle={() => void signIn()}
@@ -97,7 +93,14 @@ function MemberRoot({ route, reload }: { route: Route; reload: () => void }) {
   if (revokedNotice) return gate('revoked');
   if (stuck) return gate('offline');
   if (state === 'loading') return null;
-  if (state === 'active') return <MemberApp me={me as Extract<typeof me, { status: 'active' }>} />;
+  if (state === 'active') {
+    if (isInvite) {
+      if (inviteInvalid || peek?.valid === false) return gate('invalidInvite');
+      if (!peek) return null;
+      return gate('inviteName');
+    }
+    return <MemberApp me={me as Extract<typeof me, { status: 'active' }>} />;
+  }
 
   if (isInvite) {
     if (inviteInvalid) return gate('invalidInvite');

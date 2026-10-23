@@ -30,6 +30,7 @@
 [data-theme="grafito"] .badge { background: var(--warn); color: var(--on-warn); }
 [data-theme="grafito"] .invite { border: 1px solid var(--line); color: var(--muted); }
 [data-theme="grafito"] .invite:hover { color: var(--ink); background: var(--surface2); }
+[data-theme="grafito"] .workspace-switcher select, [data-theme="grafito"] .workspace-add { border-radius: 999px; background: var(--navbg); color: var(--ink); }
 [data-theme="grafito"] .who-text { font-size: 13px; color: var(--muted); }
 [data-theme="grafito"] [data-who="D"] { background: #7aa7ff; color: #06142e; }
 [data-theme="grafito"] [data-who="S"] { background: #d69be3; color: #2a0d33; }

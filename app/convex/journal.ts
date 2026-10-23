@@ -2,8 +2,8 @@ import { v } from 'convex/values';
 import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import type { MutationCtx } from './_generated/server';
-import { requireOwner } from './lib/actors';
-import type { Actor } from './lib/actors';
+import { requireWorkspaceOwner } from './lib/actors';
+import type { WorkspaceActor } from './lib/actors';
 import { fail } from './lib/errors';
 import { logEvent } from './lib/events';
 import { validateJournalFields } from './lib/journalFields';
@@ -33,16 +33,16 @@ async function checkPhotos(ctx: MutationCtx, photos: PhotoInput[], already: Set<
 const storageIdsOf = (photos: Doc<'journalEntries'>['photos']) => photos.flatMap((p) => [p.storageId, p.thumbStorageId].filter((id): id is Id<'_storage'> => Boolean(id)));
 
 /** Siguiente posición al final de un día. */
-async function nextDayOrder(ctx: MutationCtx, date: string, except?: Id<'journalEntries'>) {
+async function nextDayOrder(ctx: MutationCtx, date: string, workspaceId?: Id<'workspaces'>, except?: Id<'journalEntries'>) {
   const sameDay = await ctx.db.query('journalEntries').withIndex('by_date', (q) => q.eq('date', date)).collect();
-  return sameDay.filter((e) => e._id !== except).reduce((max, e) => Math.max(max, e.dayOrder), 0) + 1;
+  return sameDay.filter((e) => e.workspaceId === workspaceId && e._id !== except).reduce((max, e) => Math.max(max, e.dayOrder), 0) + 1;
 }
 
 /**
  * Aplica los campos validados a un registro existente. Devuelve los nombres de los campos que cambiaron (vacío si nada
  * cambió, y entonces no se escribe nada) y borra los archivos de las imágenes que ya no están.
  */
-async function applyFields(ctx: MutationCtx, actor: Actor, entry: Doc<'journalEntries'>, fields: ValidJournalFields, extra: Partial<Doc<'journalEntries'>> = {}): Promise<string[]> {
+async function applyFields(ctx: MutationCtx, actor: WorkspaceActor, entry: Doc<'journalEntries'>, fields: ValidJournalFields, extra: Partial<Doc<'journalEntries'>> = {}): Promise<string[]> {
   const project = await ensureProject(ctx, actor, fields.projectName);
   const keep = new Map(entry.photos.map((p) => [p.storageId as string | undefined, p]));
   await checkPhotos(ctx, fields.photos, new Set(entry.photos.map((p) => p.storageId).filter((id): id is Id<'_storage'> => Boolean(id))));
@@ -68,7 +68,7 @@ async function applyFields(ctx: MutationCtx, actor: Actor, entry: Doc<'journalEn
   set('photos', photos, JSON.stringify(entry.photos) === JSON.stringify(photos));
 
   if (changed.length === 0 && Object.keys(extra).length === 0) return [];
-  if (next.date !== undefined) next.dayOrder = await nextDayOrder(ctx, fields.date, entry._id);
+  if (next.date !== undefined) next.dayOrder = await nextDayOrder(ctx, fields.date, actor.workspaceId, entry._id);
   next.updatedAt = Date.now();
   await ctx.db.patch(entry._id, next);
 
@@ -79,14 +79,15 @@ async function applyFields(ctx: MutationCtx, actor: Actor, entry: Doc<'journalEn
 
 /** Un registro creado desde el formulario nace completo (no es borrador). */
 export const createManual = mutation({
-  args: { fields: journalFieldsInput },
-  handler: async (ctx, { fields }): Promise<Id<'journalEntries'>> => {
-    const actor = await requireOwner(ctx);
+  args: { fields: journalFieldsInput, workspaceId: v.optional(v.id('workspaces')) },
+  handler: async (ctx, { fields, workspaceId }): Promise<Id<'journalEntries'>> => {
+    const actor = await requireWorkspaceOwner(ctx, workspaceId);
     const valid = validateJournalFields(fields);
     const project = await ensureProject(ctx, actor, valid.projectName);
     await checkPhotos(ctx, valid.photos, new Set());
     const now = Date.now();
     const id = await ctx.db.insert('journalEntries', {
+      workspaceId: actor.workspaceId,
       date: valid.date,
       projectId: project._id,
       activity: valid.activity,
@@ -99,11 +100,11 @@ export const createManual = mutation({
       activityStatus: valid.activityStatus,
       links: valid.links,
       photos: valid.photos,
-      dayOrder: await nextDayOrder(ctx, valid.date),
+      dayOrder: await nextDayOrder(ctx, valid.date, actor.workspaceId),
       createdAt: now,
       updatedAt: now,
     });
-    await logEvent(ctx, actor, { type: 'journal.documented', subjectKind: 'journal', subjectId: id, subjectTitle: titleOf(valid.activity), detail: { origin: 'manual' } });
+    await logEvent(ctx, actor, { type: 'journal.documented', subjectKind: 'journal', subjectId: id, subjectTitle: titleOf(valid.activity), detail: { origin: 'manual' } }, { workspaceId: actor.workspaceId });
     return id;
   },
 });
@@ -117,16 +118,17 @@ const MAX_RESTORE_BATCH = 50;
  */
 export const restore = mutation({
   args: {
+    workspaceId: v.optional(v.id('workspaces')),
     entries: v.array(v.object({ legacyId: v.string(), fields: journalFieldsInput, createdAt: v.optional(v.number()), updatedAt: v.optional(v.number()) })),
   },
-  handler: async (ctx, { entries }) => {
-    const actor = await requireOwner(ctx);
+  handler: async (ctx, { entries, workspaceId }) => {
+    const actor = await requireWorkspaceOwner(ctx, workspaceId);
     if (entries.length > MAX_RESTORE_BATCH) throw fail('VALIDATION', `Se restauran ${MAX_RESTORE_BATCH} registros por vez.`);
     let created = 0;
     let updated = 0;
     for (const item of entries) {
       const valid = validateJournalFields(item.fields);
-      const existing = await ctx.db.query('journalEntries').withIndex('by_legacyId', (q) => q.eq('legacyId', item.legacyId)).first();
+      const existing = (await ctx.db.query('journalEntries').withIndex('by_legacyId', (q) => q.eq('legacyId', item.legacyId)).collect()).find((entry) => entry.workspaceId === actor.workspaceId);
       if (existing) {
         await applyFields(ctx, actor, existing, valid, { docStatus: 'complete', ...(item.updatedAt ? { updatedAt: item.updatedAt } : {}) });
         updated += 1;
@@ -136,6 +138,7 @@ export const restore = mutation({
       await checkPhotos(ctx, valid.photos, new Set());
       const now = Date.now();
       await ctx.db.insert('journalEntries', {
+          workspaceId: actor.workspaceId,
         legacyId: item.legacyId,
         date: valid.date,
         projectId: project._id,
@@ -149,7 +152,7 @@ export const restore = mutation({
         activityStatus: valid.activityStatus,
         links: valid.links,
         photos: valid.photos,
-        dayOrder: await nextDayOrder(ctx, valid.date),
+          dayOrder: await nextDayOrder(ctx, valid.date, actor.workspaceId),
         createdAt: item.createdAt ?? now,
         updatedAt: item.updatedAt ?? now,
       });
@@ -161,52 +164,52 @@ export const restore = mutation({
 
 /** «Completar detalles»: el borrador pasa a completo y recién entonces suma horas. */
 export const documentDraft = mutation({
-  args: { id: v.id('journalEntries'), fields: journalFieldsInput },
-  handler: async (ctx, { id, fields }) => {
-    const actor = await requireOwner(ctx);
+  args: { id: v.id('journalEntries'), fields: journalFieldsInput, workspaceId: v.optional(v.id('workspaces')) },
+  handler: async (ctx, { id, fields, workspaceId }) => {
+    const actor = await requireWorkspaceOwner(ctx, workspaceId);
     const entry = await ctx.db.get(id);
-    if (!entry) throw entryNotFound();
+    if (!entry || entry.workspaceId !== actor.workspaceId) throw entryNotFound();
     if (entry.docStatus !== 'draft') throw fail('VALIDATION', 'Este registro ya está completo.');
     const valid = validateJournalFields(fields);
     await applyFields(ctx, actor, entry, valid, { docStatus: 'complete' });
-    await logEvent(ctx, actor, { type: 'journal.documented', subjectKind: 'journal', subjectId: id, subjectTitle: titleOf(valid.activity), detail: { origin: 'draft' } });
+    await logEvent(ctx, actor, { type: 'journal.documented', subjectKind: 'journal', subjectId: id, subjectTitle: titleOf(valid.activity), detail: { origin: 'draft' } }, { workspaceId: actor.workspaceId });
   },
 });
 
 /** «Editar registro»: solo registros completos; los borradores se completan con `documentDraft`. */
 export const update = mutation({
-  args: { id: v.id('journalEntries'), fields: journalFieldsInput },
-  handler: async (ctx, { id, fields }) => {
-    const actor = await requireOwner(ctx);
+  args: { id: v.id('journalEntries'), fields: journalFieldsInput, workspaceId: v.optional(v.id('workspaces')) },
+  handler: async (ctx, { id, fields, workspaceId }) => {
+    const actor = await requireWorkspaceOwner(ctx, workspaceId);
     const entry = await ctx.db.get(id);
-    if (!entry) throw entryNotFound();
+    if (!entry || entry.workspaceId !== actor.workspaceId) throw entryNotFound();
     if (entry.docStatus === 'draft') throw fail('VALIDATION', 'Este registro es un borrador: usa «Completar detalles».');
     const valid = validateJournalFields(fields);
     const changed = await applyFields(ctx, actor, entry, valid);
     if (changed.length === 0) return;
-    await logEvent(ctx, actor, { type: 'journal.edited', subjectKind: 'journal', subjectId: id, subjectTitle: titleOf(valid.activity), detail: { fields: changed } });
+    await logEvent(ctx, actor, { type: 'journal.edited', subjectKind: 'journal', subjectId: id, subjectTitle: titleOf(valid.activity), detail: { fields: changed } }, { workspaceId: actor.workspaceId });
   },
 });
 
 /** Borra el registro y los archivos de sus imágenes. No vuelve a crear el borrador de su tarea. */
 export const remove = mutation({
-  args: { id: v.id('journalEntries') },
-  handler: async (ctx, { id }) => {
-    const actor = await requireOwner(ctx);
+  args: { id: v.id('journalEntries'), workspaceId: v.optional(v.id('workspaces')) },
+  handler: async (ctx, { id, workspaceId }) => {
+    const actor = await requireWorkspaceOwner(ctx, workspaceId);
     const entry = await ctx.db.get(id);
-    if (!entry) throw entryNotFound();
+    if (!entry || entry.workspaceId !== actor.workspaceId) throw entryNotFound();
     for (const storageId of storageIdsOf(entry.photos)) await ctx.storage.delete(storageId);
     await ctx.db.delete(id);
-    await logEvent(ctx, actor, { type: 'journal.deleted', subjectKind: 'journal', subjectId: id, subjectTitle: titleOf(entry.activity) });
+    await logEvent(ctx, actor, { type: 'journal.deleted', subjectKind: 'journal', subjectId: id, subjectTitle: titleOf(entry.activity) }, { workspaceId: actor.workspaceId });
   },
 });
 
 /** Reordena los registros de un día: `orderedIds` debe ser exactamente el conjunto de registros de esa fecha. */
 export const reorder = mutation({
-  args: { date: v.string(), orderedIds: v.array(v.id('journalEntries')) },
-  handler: async (ctx, { date, orderedIds }) => {
-    await requireOwner(ctx);
-    const sameDay = await ctx.db.query('journalEntries').withIndex('by_date', (q) => q.eq('date', date)).collect();
+  args: { date: v.string(), orderedIds: v.array(v.id('journalEntries')), workspaceId: v.optional(v.id('workspaces')) },
+  handler: async (ctx, { date, orderedIds, workspaceId }) => {
+    const actor = await requireWorkspaceOwner(ctx, workspaceId);
+    const sameDay = (await ctx.db.query('journalEntries').withIndex('by_date', (q) => q.eq('date', date)).collect()).filter((entry) => entry.workspaceId === actor.workspaceId);
     const ids = new Set<string>(orderedIds);
     if (ids.size !== orderedIds.length || ids.size !== sameDay.length || sameDay.some((e) => !ids.has(e._id))) {
       throw fail('VALIDATION', 'El orden del día cambió. Recarga e inténtalo de nuevo.');
@@ -221,22 +224,23 @@ export const reorder = mutation({
 /** Fecha descendente; dentro del día, orden manual y luego última actualización (la más reciente primero). */
 export const list = query({
   args: {
+    workspaceId: v.optional(v.id('workspaces')),
     q: v.optional(v.string()),
     projectId: v.optional(v.id('projects')),
     activityStatus: v.optional(activityStatus),
     onlyDrafts: v.optional(v.boolean()),
   },
-  handler: async (ctx, filters) => {
-    await requireOwner(ctx);
-    return listJournal(ctx, filters);
+  handler: async (ctx, { workspaceId, ...filters }) => {
+    const actor = await requireWorkspaceOwner(ctx, workspaceId);
+    return listJournal(ctx, filters, {}, actor.workspaceId);
   },
 });
 
 /** Indicadores de la Bitácora: solo los registros completos cuentan y suman horas; los borradores se cuentan aparte. */
 export const summary = query({
-  args: {},
-  handler: async (ctx) => {
-    await requireOwner(ctx);
-    return journalSummary(ctx);
+  args: { workspaceId: v.optional(v.id('workspaces')) },
+  handler: async (ctx, { workspaceId }) => {
+    const actor = await requireWorkspaceOwner(ctx, workspaceId);
+    return journalSummary(ctx, actor.workspaceId);
   },
 });

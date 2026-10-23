@@ -4,6 +4,8 @@ import type { Audience } from '../audience';
 import { TABS } from '../router';
 import type { Tab } from '../router';
 import { AppearanceMenu } from './AppearanceMenu';
+import type { WorkspaceSummary } from '../../convex/lib/workspaces';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 type NavbarProps = {
   audience: Audience;
@@ -19,13 +21,14 @@ type NavbarProps = {
   /** Iniciales del botón de perfil. */
   initials: string;
   profileLabel: string;
+  workspaces?: { choices: WorkspaceSummary[]; active: WorkspaceSummary };
   onSelect: (tab: Tab) => void;
   onInvite?: () => void;
   onProfile: () => void;
 };
 
 /** Barra superior: marca, pestañas con indicador deslizante, «Invitar», «Apariencia» y el perfil. */
-export function Navbar({ audience, active, includesJournal = false, draftCount = 0, brandSubtitle, whoText, initials, profileLabel, onSelect, onInvite, onProfile }: NavbarProps) {
+export function Navbar({ audience, active, includesJournal = false, draftCount = 0, brandSubtitle, whoText, initials, profileLabel, workspaces, onSelect, onInvite, onProfile }: NavbarProps) {
   const visible = tabsFor(audience, includesJournal);
   const nav = useRef<HTMLElement>(null);
   const indicator = useRef<HTMLSpanElement>(null);
@@ -54,6 +57,7 @@ export function Navbar({ audience, active, includesJournal = false, draftCount =
           <span className="brand-text">Bitácora</span>
           {brandSubtitle && <span className="brand-subtitle">{brandSubtitle}</span>}
         </span>
+        {workspaces && <WorkspaceSwitcher workspaces={workspaces.choices} activeWorkspace={workspaces.active} activeTab={active} />}
       </div>
       <nav className="tabs" ref={nav} aria-label="Secciones">
         <span className="indicator" ref={indicator} />

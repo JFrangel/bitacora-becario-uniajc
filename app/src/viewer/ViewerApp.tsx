@@ -20,7 +20,7 @@ import { Navbar } from '../shell/Navbar';
 import { Page } from '../views/Pages';
 
 const noop = () => {};
-const goHome = () => navigate('#/');
+const goHome = () => navigate(hrefFor('board'));
 const reload = () => window.location.reload();
 
 const gate = (state: GateState) => <Gate state={state} onGoogle={noop} onHome={goHome} onRetry={reload} onAccept={noop} />;
@@ -94,7 +94,7 @@ function ViewerContent({ token }: { token: string }) {
   );
 }
 
-/** La vista del enlace de solo lectura (`#/ver/<token>`): todo lo que la dueña eligió compartir, sin editar nada y sin sesión. */
+/** La vista de solo lectura `/ver/<token>`: lo que la dueña eligió compartir, sin edición ni sesión. */
 export function ViewerApp({ token }: { token: string }) {
   return (
     <ViewerBoundary key={token}>

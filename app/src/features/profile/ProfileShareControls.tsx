@@ -53,7 +53,7 @@ export function ProfileShareControls() {
     setBusy(true);
     try {
       const result = await create(visibility);
-      setLink(`${window.location.origin}${window.location.pathname}#/perfil/${result.token}`);
+      setLink(`${window.location.origin}/perfil/${encodeURIComponent(result.token)}`);
       toast('Enlace de perfil creado.');
     } catch (error) {
       setMessage(errorMessage(error) ?? 'No se pudo crear el enlace.');

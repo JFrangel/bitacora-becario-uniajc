@@ -379,7 +379,7 @@ describe('settings: the read-only link', () => {
     const owner = await setupOwner(t);
     return { t, owner };
   }
-  const tokenOf = (link: string) => link.split('#/ver/')[1];
+  const tokenOf = (link: string) => link.split('/ver/')[1];
 
   it('starts disabled, with the defaults of the spec and no link', async () => {
     const { owner } = await fresh();
@@ -391,7 +391,7 @@ describe('settings: the read-only link', () => {
     await owner.client.mutation(api.settings.setShare, { enabled: true });
     const settings = await owner.client.query(api.settings.get, {});
     expect(settings).toMatchObject({ enabled: true, includesJournal: true, showsDescriptions: false });
-    expect(settings.link).toMatch(/#\/ver\/[A-Za-z0-9_-]{43}$/);
+    expect(settings.link).toMatch(/\/ver\/[A-Za-z0-9_-]{43}$/);
     await expect(t.query(api.viewer.access, { shareToken: tokenOf(settings.link!) })).resolves.toBeDefined();
   });
 

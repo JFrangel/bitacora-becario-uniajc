@@ -1,6 +1,7 @@
 import { Component, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { BadgeData } from '../../../convex/lib/profile';
+import type { Id } from '../../../convex/_generated/dataModel';
 import { useSession } from '../../audience';
 import { errorMessage } from '../../convexClient';
 import { Panel } from '../../shell/Panel';
@@ -54,12 +55,13 @@ type BodyProps = {
   mode: 'view' | 'edit';
   readOnly: boolean;
   isOwner: boolean;
+  workspaceId?: Id<'workspaces'>;
   onMode: (mode: 'view' | 'edit') => void;
   onAccess?: () => void;
   onSignOut?: () => void;
 };
 
-function ProfileBody({ data, design, mode, readOnly, isOwner, onMode, onAccess, onSignOut }: BodyProps) {
+function ProfileBody({ data, design, mode, readOnly, isOwner, workspaceId, onMode, onAccess, onSignOut }: BodyProps) {
   const ui = useProfileUi();
   const use3D = useBadge3D();
   const { setBodyMounted } = ui;
@@ -68,7 +70,7 @@ function ProfileBody({ data, design, mode, readOnly, isOwner, onMode, onAccess, 
     return () => setBodyMounted(false);
   }, [setBodyMounted]);
 
-  if (mode === 'edit') return <ProfileForm data={data} onDone={() => onMode('view')} onCancel={() => onMode('view')} />;
+  if (mode === 'edit') return <ProfileForm data={data} workspaceId={workspaceId} onDone={() => onMode('view')} onCancel={() => onMode('view')} />;
 
   return (
     <div id="profileView">
@@ -127,7 +129,7 @@ type ProfilePanelProps = {
  */
 export function ProfilePanel({ onAccess, onSignOut }: ProfilePanelProps) {
   const ui = useProfileUi();
-  const { audience } = useSession();
+  const { audience, workspaceId } = useSession();
   const toast = useToast();
   const data = useBadgeData();
   const { design, setDesign, isLocal } = useBadgeDesign(data);
@@ -153,7 +155,7 @@ export function ProfilePanel({ onAccess, onSignOut }: ProfilePanelProps) {
     <>
       <Panel open={ui.panelOpen} onClose={ui.closePanel} title={title} className="profile">
         {data ? (
-          <ProfileBody data={data} design={design} mode={mode} readOnly={readOnly} isOwner={audience === 'owner'} onMode={setMode} onAccess={onAccess} onSignOut={onSignOut} />
+          <ProfileBody data={data} design={design} mode={mode} readOnly={readOnly} isOwner={audience === 'owner'} workspaceId={workspaceId} onMode={setMode} onAccess={onAccess} onSignOut={onSignOut} />
         ) : (
           <p className="muted">Cargando…</p>
         )}

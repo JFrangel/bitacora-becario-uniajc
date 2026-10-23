@@ -1,9 +1,10 @@
 import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx } from '../_generated/server';
-import type { Actor } from './actors';
+import type { WorkspaceActor } from './actors';
 import { bogotaDate } from './dates';
 import { logEvent } from './events';
 import { LIMITS } from './limits';
+import { workspaceMembership } from './workspaces';
 
 /**
  * Regla 1: crea el borrador de Bitácora de una tarea completada si su responsable es la dueña y todavía no hay un
@@ -13,17 +14,19 @@ import { LIMITS } from './limits';
  * la misma mutación que cambia la tarea: como las mutaciones son serializables, dos llamadas simultáneas ven el
  * registro de la otra y no duplican. `actor` es quien hizo el cambio (queda en el historial), no el responsable.
  */
-export async function ensureDraft(ctx: MutationCtx, task: Doc<'tasks'>, actor: Actor): Promise<Id<'journalEntries'> | null> {
+export async function ensureDraft(ctx: MutationCtx, task: Doc<'tasks'>, actor: WorkspaceActor): Promise<Id<'journalEntries'> | null> {
   if (!task.assigneeId) return null;
   const assignee = await ctx.db.get(task.assigneeId);
-  if (!assignee?.isOwner) return null;
-  const linked = await ctx.db.query('journalEntries').withIndex('by_task', (q) => q.eq('taskId', task._id)).first();
+  const ownerMembership = task.workspaceId ? await workspaceMembership(ctx, task.assigneeId, task.workspaceId) : null;
+  if (!assignee || (task.workspaceId ? ownerMembership?.role !== 'owner' : !assignee.isOwner)) return null;
+  const linked = (await ctx.db.query('journalEntries').withIndex('by_task', (q) => q.eq('taskId', task._id)).collect()).find((entry) => entry.workspaceId === task.workspaceId);
   if (linked) return null;
 
   const now = Date.now();
   const date = bogotaDate(now);
-  const sameDay = await ctx.db.query('journalEntries').withIndex('by_date', (q) => q.eq('date', date)).collect();
+  const sameDay = (await ctx.db.query('journalEntries').withIndex('by_date', (q) => q.eq('date', date)).collect()).filter((entry) => entry.workspaceId === task.workspaceId);
   const id = await ctx.db.insert('journalEntries', {
+    workspaceId: task.workspaceId,
     taskId: task._id,
     taskTitleSnapshot: task.title,
     date,
@@ -39,6 +42,6 @@ export async function ensureDraft(ctx: MutationCtx, task: Doc<'tasks'>, actor: A
     createdAt: now,
     updatedAt: now,
   });
-  await logEvent(ctx, actor, { type: 'journal.draft_created', subjectKind: 'journal', subjectId: id, subjectTitle: task.title });
+  await logEvent(ctx, actor, { type: 'journal.draft_created', subjectKind: 'journal', subjectId: id, subjectTitle: task.title }, { workspaceId: task.workspaceId });
   return id;
 }

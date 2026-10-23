@@ -12,6 +12,20 @@
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; justify-self: start; }
 .brand-copy { display: grid; min-width: 0; }
 .brand-subtitle { max-width: min(34vw, 240px); overflow: hidden; color: var(--muted); font-size: 10px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-switcher { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.workspace-switcher select { width: clamp(112px, 16vw, 205px); min-width: 0; height: 32px; padding: 0 26px 0 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: 500 11.5px var(--font-body); text-overflow: ellipsis; }
+.workspace-switcher select:focus-visible, .workspace-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.workspace-add { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 18px; line-height: 1; }
+.workspace-add:hover { border-color: var(--accent); color: var(--accent); }
+.workspace-add.workspace-create-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: auto; min-height: 38px; padding: 6px 13px; font-size: 13px; font-weight: 600; }
+.workspace-add-label { white-space: nowrap; }
+.workspace-create { padding: 20px 22px 24px; }
+.workspace-panel .drawer-head { margin-bottom: 0; }
+.workspace-empty-nav { grid-template-columns: 1fr auto; }
+.workspace-empty-stage { display: flex; min-height: min(620px, calc(100vh - 80px)); align-items: center; }
+.workspace-empty { display: grid; justify-items: start; gap: 16px; max-width: 620px; padding: 24px 0; }
+.workspace-empty h1 { margin: 0; color: var(--ink); font-size: 32px; font-weight: 650; letter-spacing: 0; line-height: 1.15; background: none; -webkit-text-fill-color: currentColor; animation: none; }
+.workspace-empty > p:not(.eyebrow) { max-width: 540px; color: var(--muted); font-size: 15px; }
 .tabs { position: relative; display: flex; gap: 2px; }
 .tab { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: color .25s; }
 .indicator { position: absolute; z-index: 0; left: 0; top: 0; width: 0; height: 100%; transition: transform .5s cubic-bezier(.2,.9,.2,1), width .5s cubic-bezier(.2,.9,.2,1); }

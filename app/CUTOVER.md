@@ -197,6 +197,33 @@ Solo cuando todo lo de arriba esté bien:
 2. Retira el acceso público de la **carpeta de Drive** con las evidencias (las imágenes ya están en Convex).
 3. En Netlify, el sitio ya sirve la aplicación nueva; la versión estática anterior (carpeta raíz del repositorio) deja de usarse.
 
+## Espacios múltiples: corte pendiente
+
+La implementación local de varias Bitácoras **no se ha desplegado ni migrado en producción**. No abras ni canjees enlaces de
+personas usuarias como parte de estas comprobaciones.
+
+Antes de cualquier publicación, autoriza el corte por separado, respalda Convex y prueba primero con fixtures sintéticos en
+un despliegue de desarrollo. La referencia debe quedar seleccionada explícitamente: `migrate-workspaces.mjs` hace una consulta
+en seco por defecto; `--apply` es el único modo que escribe y `--prod` selecciona producción. El CLI está protegido además
+por `WORKSPACE_MIGRATION_SECRET`, configurada en el despliegue objetivo y en la variable de entorno local. No incluyas esa
+clave en Git, en la URL ni en mensajes.
+
+Secuencia prevista, no ejecutada:
+
+1. Publicar el esquema y las funciones compatibles antes de la interfaz; las referencias `workspaceId` siguen opcionales.
+2. Configurar una clave de migración privada en Convex y en la sesión local. Confirmar el despliegue seleccionado y revisar el
+   informe sin `--apply`.
+3. Solo con aprobación explícita, aplicar los lotes y verificar que todos los conteos `unassigned` y
+   `inconsistentReferences` terminen en cero.
+4. Publicar la interfaz y probar en staging que el enlace de lectura existente abre el espacio inicial y que la invitación
+   pendiente, si todavía está vigente, lleva solo a ese espacio. No canjear la invitación real como prueba.
+
+El backfill asocia las filas existentes sin reemplazarlas: mantiene los IDs, el valor exacto de `settings.shareToken`, el
+`tokenHash` de invitación y sus fechas de vencimiento, canje y revocación. Las nuevas rutas limpias `/ver/<token>` y
+`/invitacion/<token>` conservan los tokens; las direcciones heredadas `/#/ver/<token>` y `/#/invitacion/<token>` también
+siguen funcionando. Una invitación ya usada seguirá usada; el enlace no se vuelve reutilizable.
+Si el informe no confirma que el espacio inicial y sus referencias quedaron asociados, no publiques la interfaz nueva.
+
 ## Si algo sale mal
 
 - **«Entrar con Google» devuelve a la pantalla de inicio sin entrar:** casi siempre la URI de redirección (paso 3, punto 4) no coincide

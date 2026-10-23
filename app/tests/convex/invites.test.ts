@@ -8,7 +8,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const tokenOf = (link: string) => link.split('#/invitacion/')[1];
+const tokenOf = (link: string) => link.split('/invitacion/')[1];
 
 async function inviteFrom(client: { mutation: Test['mutation'] }) {
   const { link } = await client.mutation(api.invites.create, {});
@@ -21,7 +21,7 @@ describe('invites.create', () => {
     const t = newTest();
     const owner = await setupOwner(t);
     const { link, token } = await inviteFrom(owner.client);
-    expect(link).toBe(`https://bitacora.example/#/invitacion/${token}`);
+    expect(link).toBe(`https://bitacora.example/invitacion/${token}`);
     const rows = await t.run((ctx) => ctx.db.query('invites').collect());
     expect(rows).toHaveLength(1);
     expect(rows[0].tokenHash).toBe(await sha256Hex(token));

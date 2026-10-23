@@ -9,7 +9,7 @@ import { readSeed } from './seed';
  */
 test.describe('invitación', () => {
   test('pide iniciar sesión con Google antes de aceptar', async ({ page }) => {
-    await page.goto(`/#/invitacion/${readSeed().inviteToken}`);
+    await page.goto(`/invitacion/${readSeed().inviteToken}`);
     await expect(page.getByRole('heading', { name: /Te invitaron/ })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Secciones' })).toHaveCount(0);

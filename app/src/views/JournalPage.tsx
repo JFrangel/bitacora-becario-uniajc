@@ -42,14 +42,15 @@ const dataUrlToBlob = (dataUrl: string): Blob => {
 
 /** La Bitácora conectada: la dueña la escribe; el enlace de solo lectura (con Bitácora incluida) solo la mira. */
 export function JournalPage({ badge }: { badge?: ReactNode }) {
-  const { audience, shareToken } = useSession();
+  const { audience, shareToken, workspaceId } = useSession();
+  const scope = workspaceId ? { workspaceId } : {};
   const viewer = audience === 'viewer';
   const toast = useToast();
   const today = useToday();
   const { projects } = useBoardData();
 
-  const ownList = useQuery(api.journal.list, viewer ? 'skip' : {});
-  const ownSummary = useQuery(api.journal.summary, viewer ? 'skip' : {});
+  const ownList = useQuery(api.journal.list, viewer ? 'skip' : scope);
+  const ownSummary = useQuery(api.journal.summary, viewer ? 'skip' : scope);
   const shared = useQuery(api.viewer.journal, viewer ? { shareToken: shareToken! } : 'skip');
   const entries = (viewer ? shared?.entries : ownList) as JournalDto[] | undefined;
   const summary = viewer ? shared?.summary : ownSummary;
@@ -68,7 +69,7 @@ export function JournalPage({ badge }: { badge?: ReactNode }) {
   if (!entries || !summary) return <Placeholder tab="journal" />;
 
   const post = async (blob: Blob): Promise<string> => {
-    const url = await generateUploadUrl({});
+    const url = await generateUploadUrl(scope);
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': blob.type || 'image/jpeg' }, body: blob });
     if (!response.ok) throw new Error('upload');
     return ((await response.json()) as { storageId: string }).storageId;
@@ -84,9 +85,9 @@ export function JournalPage({ badge }: { badge?: ReactNode }) {
 
   const submit = async ({ mode, id, fields }: EntrySubmit) => {
     const typed = fields as never;
-    if (mode === 'create') await createManual({ fields: typed });
-    else if (mode === 'document') await documentDraft({ id: id as Id<'journalEntries'>, fields: typed });
-    else await update({ id: id as Id<'journalEntries'>, fields: typed });
+    if (mode === 'create') await createManual({ ...scope, fields: typed });
+    else if (mode === 'document') await documentDraft({ ...scope, id: id as Id<'journalEntries'>, fields: typed });
+    else await update({ ...scope, id: id as Id<'journalEntries'>, fields: typed });
   };
 
   const download = async () => {
@@ -177,7 +178,7 @@ export function JournalPage({ badge }: { badge?: ReactNode }) {
           },
         });
       }
-      for (let i = 0; i < prepared.length; i += RESTORE_BATCH) await restore({ entries: prepared.slice(i, i + RESTORE_BATCH) });
+      for (let i = 0; i < prepared.length; i += RESTORE_BATCH) await restore({ ...scope, entries: prepared.slice(i, i + RESTORE_BATCH) });
       toast(`Copia restaurada: ${prepared.length} registros${skippedDrafts ? ` (${skippedDrafts} borradores no se restauran)` : ''}.`);
     } catch (error) {
       toast(errorMessage(error) ?? 'No se pudo restaurar esta copia.');
@@ -195,7 +196,7 @@ export function JournalPage({ badge }: { badge?: ReactNode }) {
         onNew={() => setPanel({})}
         onEdit={(entry) => setPanel({ entry })}
         onReorder={(date, ids) => {
-          void reorder({ date, orderedIds: ids as Id<'journalEntries'>[] })
+          void reorder({ ...scope, date, orderedIds: ids as Id<'journalEntries'>[] })
             .then(() => toast('Orden del día guardado.'))
             .catch((error) => toast(errorMessage(error) ?? 'No se pudo guardar el orden.'));
         }}
@@ -212,7 +213,7 @@ export function JournalPage({ badge }: { badge?: ReactNode }) {
           upload={upload}
           onSubmit={submit}
           onDelete={async (id) => {
-            await remove({ id: id as Id<'journalEntries'> });
+            await remove({ ...scope, id: id as Id<'journalEntries'> });
           }}
         />
       )}

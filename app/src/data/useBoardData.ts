@@ -13,12 +13,13 @@ export type Summary = { activities: number; hours: number; completed: number; dr
  * el enlace de solo lectura lee `viewer.board`. El resumen de horas solo existe con acceso a la Bitácora.
  */
 export function useBoardData() {
-  const { audience, shareToken } = useSession();
+  const { audience, shareToken, workspaceId } = useSession();
   const viewer = audience === 'viewer';
-  const list = useQuery(api.tasks.list, viewer ? 'skip' : {});
-  const projectList = useQuery(api.projects.list, viewer ? 'skip' : {});
-  const directory = useQuery(api.members.directory, viewer ? 'skip' : {});
-  const ownerSummary = useQuery(api.journal.summary, audience === 'owner' ? {} : 'skip');
+  const scope = workspaceId ? { workspaceId } : {};
+  const list = useQuery(api.tasks.list, viewer ? 'skip' : scope);
+  const projectList = useQuery(api.projects.list, viewer ? 'skip' : scope);
+  const directory = useQuery(api.members.directory, viewer ? 'skip' : scope);
+  const ownerSummary = useQuery(api.journal.summary, audience === 'owner' ? scope : 'skip');
   const board = useQuery(api.viewer.board, viewer ? { shareToken: shareToken! } : 'skip');
 
   const tasks = (viewer ? board?.tasks : list) as TaskDto[] | undefined;

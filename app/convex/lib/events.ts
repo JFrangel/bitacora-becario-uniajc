@@ -29,8 +29,10 @@ export async function logEvent(
   ctx: MutationCtx,
   actor: Actor,
   e: { type: EventType; subjectKind: string; subjectId?: string; subjectTitle?: string; detail?: Record<string, unknown> },
+  opts: { workspaceId?: Id<'workspaces'> } = {},
 ): Promise<void> {
   await ctx.db.insert('events', {
+    workspaceId: opts.workspaceId,
     at: Date.now(),
     actorId: actor.memberId,
     actorName: actor.name,

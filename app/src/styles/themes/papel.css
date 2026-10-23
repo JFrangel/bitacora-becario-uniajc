@@ -20,6 +20,8 @@
 [data-theme="papel"] .badge { background: var(--accent); color: #fff; }
 [data-theme="papel"] .invite { border: 1px solid var(--line); }
 [data-theme="papel"] .invite:hover { background: var(--paper2); }
+[data-theme="papel"] .workspace-switcher select, [data-theme="papel"] .workspace-add { border-radius: 2px; background: var(--surface); }
+[data-theme="papel"] .workspace-add.workspace-create-button { border-width: 1px; }
 [data-theme="papel"] .who-text { font-size: 13px; color: var(--muted); }
 [data-theme="papel"] .avatar { font-family: var(--font-mono); }
 [data-theme="papel"] [data-who="D"] { background: var(--ink); color: var(--bg); }

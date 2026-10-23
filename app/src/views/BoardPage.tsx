@@ -9,11 +9,11 @@ import { Placeholder } from './Placeholder';
 
 /** El tablero conectado a los datos de quien mira. */
 export function BoardPage() {
-  const { audience, memberId } = useSession();
+  const { audience, memberId, workspaceId } = useSession();
   const data = useBoardData();
   const today = useToday();
   const panel = useTaskPanel();
-  const move = useMoveTask();
+  const move = useMoveTask(workspaceId);
   const { landedId, mark } = useLanded();
 
   if (data.loading) return <Placeholder tab="board" />;

@@ -10,11 +10,15 @@ import { LIMITS } from './limits';
  */
 export async function pageEvents(
   ctx: QueryCtx,
-  opts: { withOwnerEvents: boolean; cursor?: string | null; actorId?: Id<'members'>; subjectId?: string },
+  opts: { withOwnerEvents: boolean; cursor?: string | null; actorId?: Id<'members'>; subjectId?: string; workspaceId?: Id<'workspaces'> },
 ): Promise<{ items: EventDto[]; nextCursor: string | null }> {
-  const base = opts.withOwnerEvents
-    ? ctx.db.query('events').withIndex('by_at')
-    : ctx.db.query('events').withIndex('by_visibility_at', (q) => q.eq('visibility', 'team'));
+  const base = opts.workspaceId
+    ? opts.withOwnerEvents
+      ? ctx.db.query('events').withIndex('by_workspace_at', (q) => q.eq('workspaceId', opts.workspaceId!))
+      : ctx.db.query('events').withIndex('by_workspace_visibility_at', (q) => q.eq('workspaceId', opts.workspaceId!).eq('visibility', 'team'))
+    : opts.withOwnerEvents
+      ? ctx.db.query('events').withIndex('by_at')
+      : ctx.db.query('events').withIndex('by_visibility_at', (q) => q.eq('visibility', 'team'));
   let ordered = base.order('desc');
   if (opts.actorId) ordered = ordered.filter((q) => q.eq(q.field('actorId'), opts.actorId));
   if (opts.subjectId) ordered = ordered.filter((q) => q.eq(q.field('subjectId'), opts.subjectId));

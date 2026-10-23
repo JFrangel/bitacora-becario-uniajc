@@ -234,11 +234,17 @@ describe('Root · invitation', () => {
       expect(fake.signOut).not.toHaveBeenCalled();
     });
 
-    it('sends someone who already has access to the board', async () => {
+    it('lets an active account accept an invitation to another workspace without changing identity', async () => {
       fake.setQuery('session:me', ana);
+      fake.setQuery('invites:peek', { valid: true });
+      fake.setQuery('workspaces:listMine', { items: [{ id: 'workspaces:shared', name: 'AthenIA', role: 'editor', ownerName: 'Jose', updatedAt: 1, isInitial: false }], workspaceMode: true });
+      fake.onMutation('invites:redeem', async () => ({ memberId: 'm2', workspaceId: 'workspaces:shared', isInitial: false }));
       draw();
-      await screen.findByRole('navigation', { name: 'Secciones' });
-      expect(window.location.hash).toBe('#/');
+      expect((await screen.findByLabelText('Tu nombre') as HTMLInputElement).value).toBe('Ana Gómez');
+      expect((screen.getByLabelText('Tu rol') as HTMLInputElement).value).toBe('Directora');
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Aceptar y entrar' }));
+      await waitFor(() => expect(window.location.hash).toBe('#/espacio/workspaces%3Ashared'));
+      expect(fake.called('invites:redeem')[0].args).toEqual({ inviteToken: 'tok123', name: 'Ana Gómez', roleLabel: 'Directora' });
     });
   });
 });

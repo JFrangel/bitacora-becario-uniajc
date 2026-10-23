@@ -12,12 +12,12 @@ type Page = { items: EventDto[]; nextCursor: string | null };
  * (el historial del detalle de una tarea) y `actorId` a una persona.
  */
 export function useEvents(options: { actorId?: string; subjectId?: string; enabled?: boolean } = {}) {
-  const { audience, shareToken } = useSession();
+  const { audience, shareToken, workspaceId } = useSession();
   const { actorId, subjectId, enabled = true } = options;
   const [cursors, setCursors] = useState<Array<string | null>>([null]);
 
   // Si cambia el filtro se vuelve a empezar desde la primera página.
-  const key = `${actorId ?? ''}|${subjectId ?? ''}`;
+  const key = `${workspaceId ?? ''}|${actorId ?? ''}|${subjectId ?? ''}`;
   const [seen, setSeen] = useState(key);
   if (seen !== key) {
     setSeen(key);
@@ -30,11 +30,11 @@ export function useEvents(options: { actorId?: string; subjectId?: string; enabl
     const out: Record<string, { query: typeof api.events.list | typeof api.viewer.events; args: Record<string, unknown> }> = {};
     if (!enabled) return out;
     cursors.forEach((cursor, index) => {
-      const filters = { cursor, ...(actorId ? { actorId: actorId as Id<'members'> } : {}), ...(subjectId ? { subjectId } : {}) };
+      const filters = { cursor, ...(!workspaceId ? {} : { workspaceId }), ...(actorId ? { actorId: actorId as Id<'members'> } : {}), ...(subjectId ? { subjectId } : {}) };
       out[`p${index}`] = audience === 'viewer' ? { query: api.viewer.events, args: { shareToken: shareToken!, ...filters } } : { query: api.events.list, args: filters };
     });
     return out;
-  }, [enabled, cursors, audience, shareToken, actorId, subjectId]);
+  }, [enabled, cursors, audience, shareToken, actorId, subjectId, workspaceId]);
   const results = useQueries(requests as never) as Record<string, Page | Error | undefined>;
 
   const pages = cursors.map((_, index) => results[`p${index}`]);

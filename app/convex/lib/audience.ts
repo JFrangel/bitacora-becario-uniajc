@@ -1,6 +1,7 @@
 import type { Doc, Id } from '../_generated/dataModel';
 import type { QueryCtx } from '../_generated/server';
-import { requireMember, requireViewer } from './actors';
+import { resolveWorkspaceActor, requireViewer } from './actors';
+import { filterWorkspaceRows, workspaceMembership } from './workspaces';
 import type { TaskStatus } from './types';
 import type { Subtask } from './validate';
 
@@ -8,7 +9,7 @@ import type { Subtask } from './validate';
 export type Audience = 'owner' | 'member' | 'viewer';
 
 /** Lo que la audiencia que llama puede ver (tabla 3.1 de la especificación). */
-export type View = { audience: Audience; showDescriptions: boolean; showJournal: boolean };
+export type View = { audience: Audience; showDescriptions: boolean; showJournal: boolean; workspaceId?: Id<'workspaces'> };
 
 export type TaskDto = {
   id: Id<'tasks'>;
@@ -83,11 +84,18 @@ export async function loadTaskDtos(ctx: QueryCtx, tasks: Doc<'tasks'>[], view: V
   const members = new Map<Id<'members'>, Doc<'members'> | null>();
   const result: TaskDto[] = [];
   for (const task of tasks) {
-    if (!projects.has(task.projectId)) projects.set(task.projectId, await ctx.db.get(task.projectId));
-    if (task.assigneeId && !members.has(task.assigneeId)) members.set(task.assigneeId, await ctx.db.get(task.assigneeId));
+    if (!projects.has(task.projectId)) {
+      const project = await ctx.db.get(task.projectId);
+      projects.set(task.projectId, project && project.workspaceId === view.workspaceId ? project : null);
+    }
+    if (task.assigneeId && !members.has(task.assigneeId)) {
+      const member = await ctx.db.get(task.assigneeId);
+      const membership = view.workspaceId && member ? await workspaceMembership(ctx, member._id, view.workspaceId) : null;
+      members.set(task.assigneeId, member && (view.workspaceId === undefined || membership) ? member : null);
+    }
     let journal: TaskLookups['journal'];
     if (view.showJournal && view.audience !== 'member' && task.status === 'done') {
-      const entry = await ctx.db.query('journalEntries').withIndex('by_task', (q) => q.eq('taskId', task._id)).first();
+      const entry = filterWorkspaceRows(await ctx.db.query('journalEntries').withIndex('by_task', (q) => q.eq('taskId', task._id)).collect(), view.workspaceId)[0];
       if (entry) journal = { hours: entry.hours, isDraft: entry.docStatus === 'draft' };
     }
     result.push(
@@ -103,13 +111,17 @@ export async function loadTaskDtos(ctx: QueryCtx, tasks: Doc<'tasks'>[], view: V
 }
 
 /** Cuenta con acceso vigente: la dueña ve todo; la persona invitada, todo menos lo derivado de la Bitácora. */
-export async function memberView(ctx: QueryCtx): Promise<View> {
-  const actor = await requireMember(ctx);
-  return { audience: actor.isOwner ? 'owner' : 'member', showDescriptions: true, showJournal: actor.isOwner };
+export async function memberView(ctx: QueryCtx, workspaceId?: Id<'workspaces'>): Promise<View> {
+  return memberViewForWorkspace(ctx, workspaceId);
+}
+
+export async function memberViewForWorkspace(ctx: QueryCtx, workspaceId?: Id<'workspaces'>): Promise<View> {
+  const actor = await resolveWorkspaceActor(ctx, workspaceId);
+  return { audience: actor.workspaceRole === 'owner' ? 'owner' : 'member', showDescriptions: true, showJournal: actor.workspaceRole === 'owner', workspaceId: actor.workspaceId };
 }
 
 /** Enlace de solo lectura: el token debe coincidir con el enlace activo; las opciones las fija la dueña. */
 export async function viewerView(ctx: QueryCtx, shareToken: string): Promise<View> {
   const settings = await requireViewer(ctx, shareToken);
-  return { audience: 'viewer', showDescriptions: settings.shareShowsDescriptions, showJournal: settings.shareIncludesJournal };
+  return { audience: 'viewer', showDescriptions: settings.shareShowsDescriptions, showJournal: settings.shareIncludesJournal, workspaceId: settings.workspaceId };
 }

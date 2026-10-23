@@ -5,8 +5,9 @@ import type { TaskDto, View } from './audience';
 import { taskNotFound } from './errors';
 import { normalizeSearch } from './text';
 import { TASK_STATUSES } from './types';
+import { filterWorkspaceRows } from './workspaces';
 
-export type TaskFilters = { projectId?: Id<'projects'>; assigneeId?: Id<'members'>; priority?: number; q?: string };
+export type TaskFilters = { projectId?: Id<'projects'>; assigneeId?: Id<'members'>; priority?: number; q?: string; workspaceId?: Id<'workspaces'> };
 
 /**
  * Todas las tareas, por columna y orden. La búsqueda ignora tildes y mayúsculas, y exige todas las palabras;
@@ -18,7 +19,7 @@ export async function listTasks(ctx: QueryCtx, view: View, filters: TaskFilters 
   for (const status of TASK_STATUSES) {
     tasks.push(...(await ctx.db.query('tasks').withIndex('by_status_order', (q) => q.eq('status', status)).collect()));
   }
-  const visible = tasks.filter((task) => {
+  const visible = filterWorkspaceRows(tasks, view.workspaceId).filter((task) => {
     if (filters.projectId && task.projectId !== filters.projectId) return false;
     if (filters.assigneeId && task.assigneeId !== filters.assigneeId) return false;
     if (filters.priority !== undefined && task.priority !== filters.priority) return false;
@@ -31,6 +32,6 @@ export async function listTasks(ctx: QueryCtx, view: View, filters: TaskFilters 
 
 export async function getTask(ctx: QueryCtx, view: View, id: Id<'tasks'>): Promise<TaskDto> {
   const task = await ctx.db.get(id);
-  if (!task) throw taskNotFound();
+  if (!task || task.workspaceId !== view.workspaceId) throw taskNotFound();
   return (await loadTaskDtos(ctx, [task], view))[0];
 }

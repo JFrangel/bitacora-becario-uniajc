@@ -39,6 +39,7 @@ import type * as lib_tokens from "../lib/tokens.js";
 import type * as lib_types from "../lib/types.js";
 import type * as lib_validate from "../lib/validate.js";
 import type * as lib_validators from "../lib/validators.js";
+import type * as lib_workspaces from "../lib/workspaces.js";
 import type * as members from "../members.js";
 import type * as profile from "../profile.js";
 import type * as projects from "../projects.js";
@@ -47,6 +48,9 @@ import type * as settings from "../settings.js";
 import type * as tasks from "../tasks.js";
 import type * as testing from "../testing.js";
 import type * as viewer from "../viewer.js";
+import type * as workspaceMigration from "../workspaceMigration.js";
+import type * as workspaceMigrationAdmin from "../workspaceMigrationAdmin.js";
+import type * as workspaces from "../workspaces.js";
 
 import type {
   ApiFromModules,
@@ -86,6 +90,7 @@ declare const fullApi: ApiFromModules<{
   "lib/types": typeof lib_types;
   "lib/validate": typeof lib_validate;
   "lib/validators": typeof lib_validators;
+  "lib/workspaces": typeof lib_workspaces;
   members: typeof members;
   profile: typeof profile;
   projects: typeof projects;
@@ -94,6 +99,9 @@ declare const fullApi: ApiFromModules<{
   tasks: typeof tasks;
   testing: typeof testing;
   viewer: typeof viewer;
+  workspaceMigration: typeof workspaceMigration;
+  workspaceMigrationAdmin: typeof workspaceMigrationAdmin;
+  workspaces: typeof workspaces;
 }>;
 
 /**

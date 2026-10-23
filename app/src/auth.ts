@@ -47,7 +47,7 @@ export function useAuthState(options: { tryOwner?: boolean } = {}) {
   else if (me.status === 'none') state = !tryOwner || denied ? 'no-access' : 'loading';
   else state = 'anonymous';
 
-  /** Abre el inicio de sesión de Google y vuelve a esta misma dirección (con su `#`, por si es una invitación). */
+  /** Abre Google y vuelve a la ruta actual, incluidos los enlaces heredados con hash. */
   const signInWithGoogle = useCallback(() => {
     const here = window.location.pathname + window.location.search + window.location.hash;
     return signIn('google', { redirectTo: here });

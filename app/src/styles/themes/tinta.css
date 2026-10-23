@@ -19,6 +19,9 @@
 [data-theme="tinta"] .badge { background: var(--accent); color: #fff; border: 2px solid var(--ink); }
 [data-theme="tinta"] .invite { border: 2px solid #fff; border-radius: 10px; font-weight: 600; color: #fff; }
 [data-theme="tinta"] .invite:hover { background: #ffffff; color: #0e0e0e; }
+[data-theme="tinta"] .workspace-switcher select, [data-theme="tinta"] .workspace-add { border: 2px solid #fff; border-radius: 8px; background: var(--bar); color: #fff; }
+[data-theme="tinta"] .workspace-add:hover { background: var(--lime); color: var(--ink); }
+[data-theme="tinta"] .workspace-add.workspace-create-button { width: auto; padding: 6px 13px; background: var(--lime); color: var(--ink); box-shadow: 3px 3px 0 var(--accent); }
 [data-theme="tinta"] .who-text { font-size: 13px; font-weight: 600; color: #fff; }
 [data-theme="tinta"] .avatar { border: 2px solid var(--ink); font-weight: 700; }
 [data-theme="tinta"] [data-who="D"] { background: var(--blue); color: #fff; }

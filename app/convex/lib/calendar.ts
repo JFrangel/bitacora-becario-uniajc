@@ -3,6 +3,7 @@ import { loadTaskDtos } from './audience';
 import type { TaskDto, View } from './audience';
 import { monthRange } from './dates';
 import { fail } from './errors';
+import { filterWorkspaceRows } from './workspaces';
 
 export type MonthData = { tasks: TaskDto[]; hoursByDay?: Record<string, number> };
 
@@ -15,10 +16,10 @@ export async function monthData(ctx: QueryCtx, view: View, year: number, month: 
     throw fail('VALIDATION', 'El mes no es válido.');
   }
   const { from, to } = monthRange(year, month);
-  const tasks = await ctx.db.query('tasks').withIndex('by_due', (q) => q.gte('dueDate', from).lte('dueDate', to)).collect();
+  const tasks = filterWorkspaceRows(await ctx.db.query('tasks').withIndex('by_due', (q) => q.gte('dueDate', from).lte('dueDate', to)).collect(), view.workspaceId);
   const data: MonthData = { tasks: await loadTaskDtos(ctx, tasks, view) };
   if (view.showJournal) {
-    const entries = await ctx.db.query('journalEntries').withIndex('by_date', (q) => q.gte('date', from).lte('date', to)).collect();
+    const entries = filterWorkspaceRows(await ctx.db.query('journalEntries').withIndex('by_date', (q) => q.gte('date', from).lte('date', to)).collect(), view.workspaceId);
     const hoursByDay: Record<string, number> = {};
     for (const entry of entries) {
       if (entry.docStatus === 'complete' && entry.hours !== undefined) hoursByDay[entry.date] = (hoursByDay[entry.date] ?? 0) + entry.hours;

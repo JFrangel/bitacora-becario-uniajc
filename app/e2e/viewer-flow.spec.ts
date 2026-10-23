@@ -3,7 +3,7 @@ import { EDIT_BUTTONS, readSeed } from './seed';
 
 test.describe('enlace de solo lectura', () => {
   test('muestra todo y no deja editar nada', async ({ page }) => {
-    await page.goto(`/#/ver/${readSeed().shareToken}`);
+    await page.goto(`/ver/${readSeed().shareToken}`);
     await expect(page.getByText('Tarea de prueba 01')).toBeVisible();
     await expect(page.locator('.who-text')).toHaveText('Solo lectura');
     for (const tab of ['Tablero', 'Calendario', 'Bitácora', 'Historial']) await expect(page.getByRole('button', { name: new RegExp(`^${tab}`) })).toBeVisible();

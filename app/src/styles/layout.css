@@ -10,6 +10,11 @@
   .app[data-theme] .nav { grid-template-columns: 1fr auto; grid-template-areas: "brand who" "tabs tabs"; row-gap: 8px; padding: 10px 12px 0; }
   .app[data-theme="grafito"] .nav { padding-bottom: 12px; }
   .app[data-theme] .brand { grid-area: brand; }
+  .app[data-theme] .brand { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; row-gap: 7px; }
+  .app[data-theme] .brand .mark { grid-column: 1; grid-row: 1; }
+  .app[data-theme] .brand-copy { grid-column: 2; grid-row: 1; }
+  .app[data-theme] .workspace-switcher { grid-column: 1 / -1; grid-row: 2; }
+  .app[data-theme] .workspace-switcher select { width: min(220px, 54vw); }
   .app[data-theme] .brand-subtitle { max-width: 42vw; }
   .app[data-theme] .who { grid-area: who; }
   .app[data-theme] .tabs { grid-area: tabs; justify-self: stretch; overflow: visible; }

@@ -1,5 +1,6 @@
 import { createContext, createElement, useContext } from 'react';
 import type { ReactNode } from 'react';
+import type { Id } from '../convex/_generated/dataModel';
 import type { Tab } from './router';
 
 /** Quién mira: la dueña, una persona invitada o el enlace de solo lectura. */
@@ -7,6 +8,9 @@ export type Audience = 'owner' | 'member' | 'viewer';
 
 export type SessionInfo = {
   audience: Audience;
+  /** Espacio activo; ausente solo en la compatibilidad con datos sin migrar. */
+  workspaceId?: Id<'workspaces'>;
+  workspaceRole?: 'owner' | 'editor';
   /** Solo en la vista de solo lectura: el token del enlace. */
   shareToken?: string;
   /** Persona con sesión. En solo lectura no hay persona. */

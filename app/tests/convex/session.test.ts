@@ -40,7 +40,7 @@ describe('invites.peek', () => {
     const t = newTest();
     const owner = await setupOwner(t);
     const link = (await owner.client.mutation(api.invites.create, {})).link;
-    const token = link.split('#/invitacion/')[1];
+    const token = link.split('/invitacion/')[1];
     return { t, owner, token };
   }
 
@@ -57,8 +57,8 @@ describe('invites.peek', () => {
   it('says invalid once the invitation is used, revoked or expired', async () => {
     const { t, owner, token } = await seed();
     const invited = await asUser(t, 'nueva@ejemplo.co', 'Nueva');
-    const second = (await owner.client.mutation(api.invites.create, {})).link.split('#/invitacion/')[1];
-    const third = (await owner.client.mutation(api.invites.create, {})).link.split('#/invitacion/')[1];
+    const second = (await owner.client.mutation(api.invites.create, {})).link.split('/invitacion/')[1];
+    const third = (await owner.client.mutation(api.invites.create, {})).link.split('/invitacion/')[1];
 
     await invited.client.mutation(api.invites.redeem, { inviteToken: token, name: 'Nueva', roleLabel: 'Directora' });
     expect(await t.query(api.invites.peek, { inviteToken: token })).toEqual({ valid: false });

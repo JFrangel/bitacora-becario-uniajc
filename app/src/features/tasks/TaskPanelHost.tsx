@@ -38,13 +38,14 @@ export function TaskPanelProvider({ children }: { children: ReactNode }) {
 }
 
 function TaskPanelHost({ state, onClose }: { state: PanelState; onClose: () => void }) {
-  const { audience, memberId } = useSession();
+  const { audience, memberId, workspaceId } = useSession();
+  const scope = workspaceId ? { workspaceId } : {};
   const toast = useToast();
   const { tasks, projects, people } = useBoardData();
   const create = useMutation(api.tasks.create);
   const update = useMutation(api.tasks.update);
   const remove = useMutation(api.tasks.remove);
-  const move = useMoveTask();
+  const move = useMoveTask(workspaceId);
   const { mark } = useLanded();
 
   const task = state?.mode === 'edit' ? tasks.find((t) => t.id === state.id) : undefined;
@@ -67,11 +68,11 @@ function TaskPanelHost({ state, onClose }: { state: PanelState; onClose: () => v
       events={history.events}
       onClose={onClose}
       onCreate={async (args) => {
-        const id = await create({ ...args, assigneeId: args.assigneeId as Id<'members'> | undefined });
+        const id = await create({ ...scope, ...args, assigneeId: args.assigneeId as Id<'members'> | undefined });
         mark(id, args.status ?? 'todo');
       }}
       onUpdate={async (id, patch) => {
-        await update({ id: id as Id<'tasks'>, patch: { ...patch, assigneeId: patch.assigneeId as Id<'members'> | null | undefined } });
+        await update({ ...scope, id: id as Id<'tasks'>, patch: { ...patch, assigneeId: patch.assigneeId as Id<'members'> | null | undefined } });
       }}
       onMove={async (id, status) => {
         const ok = await move(id, status);
@@ -79,7 +80,7 @@ function TaskPanelHost({ state, onClose }: { state: PanelState; onClose: () => v
         return ok;
       }}
       onDelete={async (id) => {
-        await remove({ id: id as Id<'tasks'> });
+        await remove({ ...scope, id: id as Id<'tasks'> });
         toast('Tarea eliminada.');
       }}
     />

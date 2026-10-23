@@ -1,7 +1,7 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
-import { requireMember } from './lib/actors';
+import { requireMember, resolveWorkspaceActor } from './lib/actors';
 import { fail } from './lib/errors';
 import { logEvent } from './lib/events';
 import { LIMITS } from './lib/limits';
@@ -13,24 +13,27 @@ const isPending = (i: { usedAt?: number; revokedAt?: number; expiresAt: number }
 
 /** Genera un enlace de invitación de un solo uso. Devuelve el token en claro **una sola vez**; en la base solo queda su hash. */
 export const create = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const actor = await requireMember(ctx);
+  args: { workspaceId: v.optional(v.id('workspaces')) },
+  handler: async (ctx, { workspaceId }) => {
+    const actor = await resolveWorkspaceActor(ctx, workspaceId);
     const now = Date.now();
-    const mine = await ctx.db.query('invites').withIndex('by_creator', (q) => q.eq('createdBy', actor.memberId)).collect();
+    const mine = actor.workspaceId
+      ? await ctx.db.query('invites').withIndex('by_workspace_creator', (q) => q.eq('workspaceId', actor.workspaceId).eq('createdBy', actor.memberId)).collect()
+      : (await ctx.db.query('invites').withIndex('by_creator', (q) => q.eq('createdBy', actor.memberId)).collect()).filter((invite) => invite.workspaceId === undefined);
     if (mine.filter((i) => isPending(i, now)).length >= LIMITS.pendingInvites) {
       throw fail('LIMIT', `Ya tienes ${LIMITS.pendingInvites} invitaciones pendientes. Revoca alguna para crear otra.`);
     }
     const token = newToken();
     await ctx.db.insert('invites', {
+      workspaceId: actor.workspaceId,
       tokenHash: await sha256Hex(token),
       createdBy: actor.memberId,
       createdAt: now,
       expiresAt: now + LIMITS.inviteDays * DAY_MS,
     });
-    await logEvent(ctx, actor, { type: 'invite.created', subjectKind: 'invite' });
+    await logEvent(ctx, actor, { type: 'invite.created', subjectKind: 'invite' }, { workspaceId: actor.workspaceId });
     const base = (process.env.SITE_URL ?? '').replace(/\/$/, '');
-    return { link: `${base}/#/invitacion/${token}` };
+    return { link: `${base}/invitacion/${token}` };
   },
 });
 
@@ -45,22 +48,25 @@ export const peek = query({
 });
 
 export const mine = query({
-  args: {},
-  handler: async (ctx) => {
-    const actor = await requireMember(ctx);
+  args: { workspaceId: v.optional(v.id('workspaces')) },
+  handler: async (ctx, { workspaceId }) => {
+    const actor = await resolveWorkspaceActor(ctx, workspaceId);
     const now = Date.now();
-    const rows = await ctx.db.query('invites').withIndex('by_creator', (q) => q.eq('createdBy', actor.memberId)).collect();
+    const rows = actor.workspaceId
+      ? await ctx.db.query('invites').withIndex('by_workspace_creator', (q) => q.eq('workspaceId', actor.workspaceId).eq('createdBy', actor.memberId)).collect()
+      : (await ctx.db.query('invites').withIndex('by_creator', (q) => q.eq('createdBy', actor.memberId)).collect()).filter((invite) => invite.workspaceId === undefined);
     return rows.filter((i) => isPending(i, now)).map((i) => ({ id: i._id, expiresAt: i.expiresAt }));
   },
 });
 
 export const revoke = mutation({
-  args: { inviteId: v.id('invites') },
-  handler: async (ctx, { inviteId }) => {
-    const actor = await requireMember(ctx);
+  args: { inviteId: v.id('invites'), workspaceId: v.optional(v.id('workspaces')) },
+  handler: async (ctx, { inviteId, workspaceId }) => {
+    const actor = await resolveWorkspaceActor(ctx, workspaceId);
     const invite = await ctx.db.get(inviteId);
     if (!invite) throw fail('NOT_FOUND');
-    if (!actor.isOwner && invite.createdBy !== actor.memberId) throw fail('FORBIDDEN');
+    if (invite.workspaceId !== actor.workspaceId) throw fail('NOT_FOUND');
+    if (actor.workspaceRole !== 'owner' && invite.createdBy !== actor.memberId) throw fail('FORBIDDEN');
     if (invite.usedAt !== undefined) throw fail('INVITE_USED');
     if (invite.revokedAt === undefined) await ctx.db.patch(inviteId, { revokedAt: Date.now() });
   },
@@ -93,7 +99,15 @@ export const redeem = mutation({
     if (!email) throw fail('VALIDATION', 'Tu cuenta de Google no tiene un correo.');
 
     const existing = await ctx.db.query('members').withIndex('by_userId', (q) => q.eq('userId', userId)).unique();
-    if (existing && existing.revokedAt === undefined) throw fail('ALREADY_MEMBER', 'Esta cuenta ya tiene acceso.');
+    const initial = invite.workspaceId ? null : await ctx.db.query('workspaces').withIndex('by_legacy_key', (q) => q.eq('legacyKey', 'initial')).unique();
+    const workspaceId = invite.workspaceId ?? initial?._id;
+    const existingMemberships = existing && workspaceId
+      ? await ctx.db.query('workspaceMembers').withIndex('by_member_workspace', (q) => q.eq('memberId', existing._id).eq('workspaceId', workspaceId)).collect()
+      : [];
+    const existingMembership = existingMemberships.find((membership) => membership.revokedAt === undefined);
+    if (existingMembership || (existing && existing.revokedAt === undefined && !workspaceId)) {
+      throw fail('ALREADY_MEMBER', 'Esta cuenta ya tiene acceso a esta Bitácora.');
+    }
 
     let memberId;
     if (existing) {
@@ -104,8 +118,14 @@ export const redeem = mutation({
     }
     const profile = await ctx.db.query('profile').withIndex('by_memberId', (q) => q.eq('memberId', memberId)).unique();
     if (!profile) await ctx.db.insert('profile', { memberId, updatedAt: now });
+    if (workspaceId) {
+      const prior = existingMemberships[0];
+      if (prior) await ctx.db.patch(prior._id, { role: 'editor', revokedAt: undefined });
+      else await ctx.db.insert('workspaceMembers', { workspaceId, memberId, role: 'editor', createdAt: now });
+    }
     await ctx.db.patch(invite._id, { usedBy: memberId, usedAt: now });
-    await logEvent(ctx, { memberId, isOwner: false, name, roleLabel }, { type: 'member.joined', subjectKind: 'member', subjectId: memberId, subjectTitle: name });
-    return { memberId };
+    await logEvent(ctx, { memberId, isOwner: false, name, roleLabel }, { type: 'member.joined', subjectKind: 'member', subjectId: memberId, subjectTitle: name }, { workspaceId });
+    const workspace = workspaceId ? await ctx.db.get(workspaceId) : null;
+    return { memberId, workspaceId, isInitial: workspace?.legacyKey === 'initial' };
   },
 });

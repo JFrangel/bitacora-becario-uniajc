@@ -42,7 +42,9 @@ function LinkField({ value, label }: Copyable) {
 
 /** Invitaciones de quien llama: crear un enlace de un solo uso (se muestra una vez), ver las pendientes y revocarlas. */
 function Invitations() {
-  const mine = useQuery(api.invites.mine, {});
+  const { workspaceId } = useSession();
+  const scope = workspaceId ? { workspaceId } : {};
+  const mine = useQuery(api.invites.mine, scope);
   const create = useMutation(api.invites.create);
   const revoke = useMutation(api.invites.revoke);
   const [link, setLink] = useState<string | null>(null);
@@ -57,7 +59,7 @@ function Invitations() {
         className="fill primary"
         onClick={() => {
           setMessage('');
-          create({})
+          create(scope)
             .then((result) => setLink(result.link))
             .catch((error) => setMessage(errorMessage(error) ?? 'No se pudo crear la invitación.'));
         }}
@@ -79,7 +81,7 @@ function Invitations() {
         {(mine ?? []).map((invite) => (
           <li key={invite.id}>
             <span>Caduca el {day(invite.expiresAt)}</span>
-            <button type="button" className="ghost2" onClick={() => void revoke({ inviteId: invite.id })}>
+            <button type="button" className="ghost2" onClick={() => void revoke({ ...scope, inviteId: invite.id })}>
               Revocar
             </button>
           </li>
@@ -91,8 +93,9 @@ function Invitations() {
 
 /** Solo la dueña: quién tiene acceso (con el correo de su cuenta) y el botón para retirarlo. */
 function People({ now }: { now: number }) {
-  const { memberId } = useSession();
-  const people = useQuery(api.members.list, {});
+  const { memberId, workspaceId } = useSession();
+  const scope = workspaceId ? { workspaceId } : {};
+  const people = useQuery(api.members.list, scope);
   const revoke = useMutation(api.members.revoke);
   const [target, setTarget] = useState<{ id: string; name: string } | null>(null);
 
@@ -124,7 +127,7 @@ function People({ now }: { now: number }) {
           text="Dejará de tener acceso de inmediato y se revocarán sus invitaciones pendientes. Podrás volver a invitar a esta persona."
           confirmLabel="Retirar acceso"
           onConfirm={() => {
-            void revoke({ memberId: target.id as Id<'members'> });
+            void revoke({ ...scope, memberId: target.id as Id<'members'> });
             setTarget(null);
           }}
           onCancel={() => setTarget(null)}
@@ -136,7 +139,9 @@ function People({ now }: { now: number }) {
 
 /** Solo la dueña: activar, copiar, regenerar y desactivar el enlace de la universidad, y sus dos opciones. */
 function ShareLink() {
-  const settings = useQuery(api.settings.get, {});
+  const { workspaceId } = useSession();
+  const scope = workspaceId ? { workspaceId } : {};
+  const settings = useQuery(api.settings.get, scope);
   const setShare = useMutation(api.settings.setShare);
   const regenerate = useMutation(api.settings.regenerateShare);
   const [asking, setAsking] = useState(false);
@@ -154,22 +159,22 @@ function ShareLink() {
             <button type="button" className="ghost2" onClick={() => setAsking(true)}>
               Regenerar enlace
             </button>
-            <button type="button" className="ghost2" onClick={() => void setShare({ enabled: false })}>
+            <button type="button" className="ghost2" onClick={() => void setShare({ ...scope, enabled: false })}>
               Desactivar enlace
             </button>
           </div>
         </>
       ) : (
-        <button type="button" className="fill primary" onClick={() => void setShare({ enabled: true })}>
+        <button type="button" className="fill primary" onClick={() => void setShare({ ...scope, enabled: true })}>
           Activar enlace
         </button>
       )}
       <label className="check">
-        <input type="checkbox" checked={settings.includesJournal} onChange={(event) => void setShare({ includesJournal: event.target.checked })} />
+        <input type="checkbox" checked={settings.includesJournal} onChange={(event) => void setShare({ ...scope, includesJournal: event.target.checked })} />
         <span>Incluir la Bitácora</span>
       </label>
       <label className="check">
-        <input type="checkbox" checked={settings.showsDescriptions} onChange={(event) => void setShare({ showsDescriptions: event.target.checked })} />
+        <input type="checkbox" checked={settings.showsDescriptions} onChange={(event) => void setShare({ ...scope, showsDescriptions: event.target.checked })} />
         <span>Mostrar descripciones de las tareas</span>
       </label>
       {asking && (
@@ -179,7 +184,7 @@ function ShareLink() {
           confirmLabel="Regenerar"
           onConfirm={() => {
             setAsking(false);
-            void regenerate({}).then(() => toast('Enlace nuevo creado. El anterior ya no funciona.'));
+            void regenerate(scope).then(() => toast('Enlace nuevo creado. El anterior ya no funciona.'));
           }}
           onCancel={() => setAsking(false)}
         />
